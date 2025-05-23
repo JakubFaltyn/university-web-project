@@ -24,6 +24,7 @@ interface AppState {
     // User actions
     setCurrentUser: (userId: string) => Promise<void>;
     loadUsers: () => Promise<void>;
+    loadUserPreferences: (userId: string) => Promise<void>;
 
     // Project actions
     loadProjects: () => Promise<void>;
@@ -62,11 +63,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // User actions
     setCurrentUser: async (userId: string) => {
-        ApiService.setCurrentUser(userId);
         try {
             const user = await ApiService.getUserById(userId);
             if (user) {
                 set({ currentUser: user });
+                // Save user preference to database
+                await ApiService.updateUserPreferences(userId);
+                // Load user's active project
+                await get().loadUserPreferences(userId);
             }
         } catch (error) {
             console.error("Error setting current user:", error);
@@ -79,6 +83,22 @@ export const useAppStore = create<AppState>((set, get) => ({
             set({ users });
         } catch (error) {
             console.error("Error loading users:", error);
+        }
+    },
+
+    loadUserPreferences: async (userId: string) => {
+        try {
+            const preferences = await ApiService.getUserPreferences(userId);
+            if (preferences?.activeProjectId) {
+                const project = await ApiService.getProjectById(preferences.activeProjectId);
+                if (project) {
+                    set({ activeProject: project });
+                    // Load stories and tasks for this project
+                    await get().loadStories(preferences.activeProjectId);
+                }
+            }
+        } catch (error) {
+            console.error("Error loading user preferences:", error);
         }
     },
 
@@ -126,6 +146,12 @@ export const useAppStore = create<AppState>((set, get) => ({
                     activeProject: state.activeProject?.id === id ? null : state.activeProject,
                 }));
 
+                // Update user preferences if this was the active project
+                const { currentUser } = get();
+                if (currentUser && get().activeProject?.id === id) {
+                    await ApiService.updateUserPreferences(currentUser.id);
+                }
+
                 // Reload stories and tasks as some might have been deleted
                 await get().loadStories();
                 await get().loadTasks();
@@ -139,8 +165,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         try {
             const project = await ApiService.getProjectById(projectId);
             if (project) {
-                ApiService.setActiveProject(project);
                 set({ activeProject: project });
+
+                // Save active project to database
+                const { currentUser } = get();
+                if (currentUser) {
+                    await ApiService.updateUserPreferences(currentUser.id, projectId);
+                }
 
                 // Load stories and tasks for this project
                 await get().loadStories(projectId);
@@ -260,12 +291,7 @@ export const useAppStore = create<AppState>((set, get) => ({
                 startDate: new Date().toISOString(),
             };
 
-            const result = await ApiService.updateTask(updatedTask);
-            if (result) {
-                set((state) => ({
-                    tasks: state.tasks.map((t) => (t.id === result.id ? result : t)),
-                }));
-            }
+            await get().updateTask(updatedTask);
         } catch (error) {
             console.error("Error assigning task:", error);
         }
@@ -282,68 +308,39 @@ export const useAppStore = create<AppState>((set, get) => ({
                 endDate: new Date().toISOString(),
             };
 
-            const result = await ApiService.updateTask(updatedTask);
-            if (result) {
-                set((state) => ({
-                    tasks: state.tasks.map((t) => (t.id === result.id ? result : t)),
-                }));
-            }
+            await get().updateTask(updatedTask);
         } catch (error) {
             console.error("Error completing task:", error);
         }
     },
 
-    // Initialization
+    // Initialize app by loading basic data
     initializeApp: async () => {
         try {
             set({ isLoading: true });
 
-            // Initialize database with sample data
-            await ApiService.initializeMockData();
+            // First, try to load users to see if database has data
+            let users = await ApiService.getUsers();
 
-            // Load current user
-            const currentUserData = ApiService.getCurrentUser();
-            let currentUser = null;
-            if (currentUserData?.id) {
-                currentUser = await ApiService.getUserById(currentUserData.id);
+            // If no users exist, initialize database with sample data
+            if (users.length === 0) {
+                console.log("No users found, initializing database...");
+                await ApiService.initializeMockData();
+                // Reload users after initialization
+                users = await ApiService.getUsers();
             }
 
-            // Load users
-            const users = await ApiService.getUsers();
+            set({ users });
+            await get().loadProjects();
 
-            // If no current user is set, set the first admin user
+            // Auto-select the admin user if no current user is set
+            const { currentUser } = get();
             if (!currentUser && users.length > 0) {
                 const adminUser = users.find((u) => u.role === "admin") || users[0];
                 await get().setCurrentUser(adminUser.id);
-                currentUser = adminUser;
             }
 
-            // Load projects
-            const projects = await ApiService.getProjects();
-
-            // Get active project if any
-            const activeProjectData = ApiService.getActiveProject();
-            let activeProject = null;
-            if (activeProjectData?.id) {
-                activeProject = await ApiService.getProjectById(activeProjectData.id);
-            }
-
-            // Load stories for active project
-            const stories = activeProject ? await ApiService.getStories(activeProject.id) : [];
-
-            // Load tasks
-            const tasks = await ApiService.getTasks();
-
-            // Update state
-            set({
-                currentUser,
-                users,
-                projects,
-                activeProject,
-                stories,
-                tasks,
-                isLoading: false,
-            });
+            set({ isLoading: false });
         } catch (error) {
             console.error("Error initializing app:", error);
             set({ isLoading: false });

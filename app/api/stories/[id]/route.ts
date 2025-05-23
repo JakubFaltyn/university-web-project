@@ -3,10 +3,11 @@ import connectDB from "@/lib/mongodb";
 import Story from "@/lib/models/Story";
 import Task from "@/lib/models/Task";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await connectDB();
-        const story = await Story.findById(params.id);
+        const { id } = await params;
+        const story = await Story.findById(id);
 
         if (!story) {
             return NextResponse.json({ error: "Story not found" }, { status: 404 });
@@ -30,12 +31,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await connectDB();
+        const { id } = await params;
         const body = await request.json();
 
-        const story = await Story.findByIdAndUpdate(params.id, body, { new: true });
+        const story = await Story.findByIdAndUpdate(id, body, { new: true });
 
         if (!story) {
             return NextResponse.json({ error: "Story not found" }, { status: 404 });
@@ -59,15 +61,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await connectDB();
+        const { id } = await params;
 
         // First delete all related tasks
-        await Task.deleteMany({ storyId: params.id });
+        await Task.deleteMany({ storyId: id });
 
         // Then delete the story
-        const story = await Story.findByIdAndDelete(params.id);
+        const story = await Story.findByIdAndDelete(id);
 
         if (!story) {
             return NextResponse.json({ error: "Story not found" }, { status: 404 });

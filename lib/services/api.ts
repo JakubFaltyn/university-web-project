@@ -1,62 +1,9 @@
 import { Project, Story, Task, User } from "../types";
 
 /**
- * API service for handling CRUD operations with localStorage
+ * API service for handling CRUD operations with database
  */
 export const ApiService = {
-    // Storage keys
-    keys: {
-        users: "managme_users",
-        projects: "managme_projects",
-        stories: "managme_stories",
-        tasks: "managme_tasks",
-        activeProject: "managme_active_project",
-        currentUser: "managme_current_user",
-    },
-
-    // Generic CRUD operations
-    getItems: <T>(key: string): T[] => {
-        if (typeof window === "undefined") return [];
-        const items = localStorage.getItem(key);
-        return items ? JSON.parse(items) : [];
-    },
-
-    getItemById: <T extends { id: string }>(key: string, id: string): T | undefined => {
-        const items = ApiService.getItems<T>(key);
-        return items.find((item) => item.id === id);
-    },
-
-    saveItems: <T>(key: string, items: T[]): void => {
-        if (typeof window === "undefined") return;
-        localStorage.setItem(key, JSON.stringify(items));
-    },
-
-    addItem: <T extends { id: string }>(key: string, item: T): T => {
-        const items = ApiService.getItems<T>(key);
-        const newItems = [...items, item];
-        ApiService.saveItems(key, newItems);
-        return item;
-    },
-
-    updateItem: <T extends { id: string }>(key: string, item: T): T | undefined => {
-        const items = ApiService.getItems<T>(key);
-        const index = items.findIndex((i) => i.id === item.id);
-
-        if (index === -1) return undefined;
-
-        const newItems = [...items];
-        newItems[index] = item;
-        ApiService.saveItems(key, newItems);
-        return item;
-    },
-
-    deleteItem: <T extends { id: string }>(key: string, id: string): boolean => {
-        const items = ApiService.getItems<T>(key);
-        const newItems = items.filter((item) => item.id !== id);
-        ApiService.saveItems(key, newItems);
-        return items.length !== newItems.length;
-    },
-
     // User operations
     async getUsers(): Promise<User[]> {
         const response = await fetch("/api/users");
@@ -259,27 +206,28 @@ export const ApiService = {
         }
     },
 
-    // Current user and active project (localStorage for UI state)
-    getCurrentUser(): User | null {
-        if (typeof window === "undefined") return null;
-        const currentUserId = localStorage.getItem("managme_current_user");
-        return currentUserId ? ({ id: currentUserId } as User) : null;
+    // User preferences (replaces localStorage for user state)
+    async getUserPreferences(userId: string): Promise<{ userId: string; activeProjectId?: string; lastActivity: Date } | null> {
+        try {
+            const response = await fetch(`/api/user-preferences?userId=${userId}`);
+            if (!response.ok) return null;
+            return response.json();
+        } catch {
+            return null;
+        }
     },
 
-    setCurrentUser(userId: string): void {
-        if (typeof window === "undefined") return;
-        localStorage.setItem("managme_current_user", userId);
-    },
-
-    getActiveProject(): Project | null {
-        if (typeof window === "undefined") return null;
-        const activeProjectData = localStorage.getItem("managme_active_project");
-        return activeProjectData ? JSON.parse(activeProjectData) : null;
-    },
-
-    setActiveProject(project: Project): void {
-        if (typeof window === "undefined") return;
-        localStorage.setItem("managme_active_project", JSON.stringify(project));
+    async updateUserPreferences(userId: string, activeProjectId?: string): Promise<boolean> {
+        try {
+            const response = await fetch("/api/user-preferences", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, activeProjectId }),
+            });
+            return response.ok;
+        } catch {
+            return false;
+        }
     },
 
     // Initialize database with sample data

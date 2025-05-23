@@ -28,7 +28,7 @@ export default function Home() {
                 <div className="border rounded-lg p-6 shadow-sm">
                     <h2 className="text-xl font-semibold mb-4">About</h2>
                     <p className="text-muted-foreground">This application was built using Next.js, TypeScript, Tailwind CSS, and Zustand.</p>
-                    <p className="mt-4 text-muted-foreground">Data is stored in your browser&apos;s localStorage.</p>
+                    <p className="mt-4 text-muted-foreground">Data is stored in the MongoDB database.</p>
                 </div>
             </div>
         </div>
