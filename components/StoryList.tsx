@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 import { canCreate, canModify, canDelete } from "@/lib/permissions";
 
 export default function StoryList() {
-    const { stories, deleteStory, updateStory, activeProject, users, currentUser } = useAppStore();
+    const { stories, deleteStory, updateStory, activeProject, users, currentUser, toggleStoryAutoUpdate } = useAppStore();
     const { data: session } = useSession();
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [editingStory, setEditingStory] = useState<Story | null>(null);
@@ -44,10 +44,18 @@ export default function StoryList() {
 
     const handleStatusChange = (story: Story, status: StoryStatus) => {
         if (!canUserModify) return;
+
+        // When manually changing status, disable auto-update
         updateStory({
             ...story,
             status,
+            autoUpdateStatus: false,
         });
+    };
+
+    const handleToggleAutoUpdate = (story: Story, autoUpdate: boolean) => {
+        if (!canUserModify) return;
+        toggleStoryAutoUpdate(story.id, autoUpdate);
     };
 
     const filteredStories = filter === "all" ? stories : stories.filter((story) => story.status === filter);
@@ -168,17 +176,28 @@ export default function StoryList() {
 
                             <div className="flex justify-between items-center">
                                 <div className="text-xs text-muted-foreground">Created: {new Date(story.createdAt).toLocaleDateString()}</div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm">Status:</span>
-                                    <select
-                                        value={story.status}
-                                        onChange={(e) => handleStatusChange(story, e.target.value as StoryStatus)}
-                                        className="text-sm border rounded px-2 py-1 bg-background"
-                                        disabled={!canUserModify}>
-                                        <option value="todo">To Do</option>
-                                        <option value="doing">Doing</option>
-                                        <option value="done">Done</option>
-                                    </select>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">Status:</span>
+                                        <select
+                                            value={story.status}
+                                            onChange={(e) => handleStatusChange(story, e.target.value as StoryStatus)}
+                                            className="text-sm border rounded px-2 py-1 bg-background"
+                                            disabled={!canUserModify}>
+                                            <option value="todo">To Do</option>
+                                            <option value="doing">Doing</option>
+                                            <option value="done">Done</option>
+                                        </select>
+                                        {story.autoUpdateStatus !== false && <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">Auto</span>}
+                                        {story.autoUpdateStatus === false && <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">Manual</span>}
+                                    </div>
+
+                                    {canUserModify && (
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-xs text-muted-foreground">Auto-update:</label>
+                                            <input type="checkbox" checked={story.autoUpdateStatus !== false} onChange={(e) => handleToggleAutoUpdate(story, e.target.checked)} className="w-4 h-4" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

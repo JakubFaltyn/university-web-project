@@ -39,6 +39,10 @@ const StorySchema: Schema = new Schema(
             ref: "User",
             required: true,
         },
+        autoUpdateStatus: {
+            type: Boolean,
+            default: true,
+        },
     },
     {
         timestamps: true,

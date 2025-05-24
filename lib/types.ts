@@ -9,6 +9,7 @@ export interface User {
     lastName: string;
     role: UserRole;
     email?: string;
+    defaultProjectId?: string;
 }
 
 export interface Project {
@@ -27,6 +28,7 @@ export interface Story {
     createdAt: string;
     status: StoryStatus;
     ownerId: string;
+    autoUpdateStatus?: boolean; // Whether status should be automatically calculated from tasks
 }
 
 export interface Task {

@@ -24,6 +24,10 @@ const UserSchema: Schema = new Schema(
             type: String,
             required: false,
         },
+        defaultProjectId: {
+            type: String,
+            required: false,
+        },
     },
     {
         timestamps: true,

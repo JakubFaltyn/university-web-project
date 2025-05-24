@@ -57,6 +57,12 @@ export async function POST() {
             },
         ]);
 
+        // Update users with default projects
+        await User.findByIdAndUpdate(users[0]._id, { defaultProjectId: projects[0]._id }); // Admin -> E-commerce Platform
+        await User.findByIdAndUpdate(users[1]._id, { defaultProjectId: projects[0]._id }); // John Developer -> E-commerce Platform
+        await User.findByIdAndUpdate(users[2]._id, { defaultProjectId: projects[1]._id }); // Jane DevOps -> Mobile App
+        await User.findByIdAndUpdate(users[3]._id, { defaultProjectId: projects[0]._id }); // Bob Developer -> E-commerce Platform
+
         // Create stories
         const stories = await Story.insertMany([
             {

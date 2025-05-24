@@ -28,45 +28,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "Stories",
             url: "/stories",
             icon: FileText,
-            items: activeProject
-                ? [
-                      {
-                          title: "Active Stories",
-                          url: "/stories",
-                      },
-                      {
-                          title: "Create Story",
-                          url: "/stories/new",
-                      },
-                  ]
-                : [
-                      {
-                          title: "Select Project First",
-                          url: "/",
-                      },
-                  ],
         },
         {
             title: "Tasks",
             url: "/tasks",
             icon: CheckSquare,
-            items: activeProject
-                ? [
-                      {
-                          title: "Kanban Board",
-                          url: "/tasks",
-                      },
-                      {
-                          title: "Create Task",
-                          url: "/tasks/new",
-                      },
-                  ]
-                : [
-                      {
-                          title: "Select Project First",
-                          url: "/",
-                      },
-                  ],
         },
         {
             title: "Users",

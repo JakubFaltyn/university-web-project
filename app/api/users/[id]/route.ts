@@ -18,6 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             lastName: user.lastName,
             role: user.role,
             email: user.email,
+            defaultProjectId: user.defaultProjectId,
         };
 
         return NextResponse.json(formattedUser);
@@ -45,6 +46,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             lastName: user.lastName,
             role: user.role,
             email: user.email,
+            defaultProjectId: user.defaultProjectId,
         };
 
         return NextResponse.json(formattedUser);

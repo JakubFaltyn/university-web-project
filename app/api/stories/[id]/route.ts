@@ -22,6 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             createdAt: story.createdAt,
             status: story.status,
             ownerId: story.ownerId.toString(),
+            autoUpdateStatus: story.autoUpdateStatus,
         };
 
         return NextResponse.json(formattedStory);
@@ -52,6 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             createdAt: story.createdAt,
             status: story.status,
             ownerId: story.ownerId.toString(),
+            autoUpdateStatus: story.autoUpdateStatus,
         };
 
         return NextResponse.json(formattedStory);

@@ -14,6 +14,7 @@ export async function GET() {
             lastName: user.lastName,
             role: user.role,
             email: user.email,
+            defaultProjectId: user.defaultProjectId,
         }));
 
         return NextResponse.json(formattedUsers);
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
             lastName: user.lastName,
             role: user.role,
             email: user.email,
+            defaultProjectId: user.defaultProjectId,
         };
 
         return NextResponse.json(formattedUser, { status: 201 });

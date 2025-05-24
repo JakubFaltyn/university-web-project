@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ApiService } from "./services/api";
-import { Project, Story, Task, User } from "./types";
+import { Project, Story, Task, User, StoryStatus } from "./types";
 
 interface AppState {
     // User state
@@ -25,6 +25,7 @@ interface AppState {
     setCurrentUser: (userId: string) => Promise<void>;
     loadUsers: () => Promise<void>;
     loadUserPreferences: (userId: string) => Promise<void>;
+    setUserDefaultProject: (userId: string, projectId: string) => Promise<void>;
 
     // Project actions
     loadProjects: () => Promise<void>;
@@ -38,6 +39,8 @@ interface AppState {
     createStory: (story: Omit<Story, "id" | "createdAt">) => Promise<void>;
     updateStory: (story: Story) => Promise<void>;
     deleteStory: (id: string) => Promise<void>;
+    updateStoryStatusFromTasks: (storyId: string) => Promise<void>;
+    toggleStoryAutoUpdate: (storyId: string, autoUpdate: boolean) => Promise<void>;
 
     // Task actions
     loadTasks: (storyId?: string) => Promise<void>;
@@ -67,10 +70,25 @@ export const useAppStore = create<AppState>((set, get) => ({
             const user = await ApiService.getUserById(userId);
             if (user) {
                 set({ currentUser: user });
-                // Save user preference to database
-                await ApiService.updateUserPreferences(userId);
-                // Load user's active project
-                await get().loadUserPreferences(userId);
+
+                // If user has a defaultProjectId, set it as active project
+                if (user.defaultProjectId) {
+                    const project = await ApiService.getProjectById(user.defaultProjectId);
+                    if (project) {
+                        set({ activeProject: project });
+                        // Save to user preferences as well
+                        await ApiService.updateUserPreferences(userId, user.defaultProjectId);
+                        // Load stories and tasks for this project
+                        await get().loadStories(user.defaultProjectId);
+                    } else {
+                        console.warn(`Default project ${user.defaultProjectId} not found for user ${userId}`);
+                        // Load user preferences as fallback
+                        await get().loadUserPreferences(userId);
+                    }
+                } else {
+                    // No default project, load user preferences as before
+                    await get().loadUserPreferences(userId);
+                }
             }
         } catch (error) {
             console.error("Error setting current user:", error);
@@ -99,6 +117,35 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
         } catch (error) {
             console.error("Error loading user preferences:", error);
+        }
+    },
+
+    setUserDefaultProject: async (userId: string, projectId: string) => {
+        try {
+            const user = await ApiService.getUserById(userId);
+            if (user) {
+                const updatedUser: User = {
+                    ...user,
+                    defaultProjectId: projectId,
+                };
+
+                const result = await ApiService.updateUser(updatedUser);
+                if (result) {
+                    // Update the users array in state
+                    set((state) => ({
+                        users: state.users.map((u) => (u.id === userId ? result : u)),
+                        currentUser: state.currentUser?.id === userId ? result : state.currentUser,
+                    }));
+
+                    // If this is the current user, also set it as active project
+                    const { currentUser } = get();
+                    if (currentUser?.id === userId) {
+                        await get().setActiveProject(projectId);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error setting user default project:", error);
         }
     },
 
@@ -234,6 +281,72 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
     },
 
+    updateStoryStatusFromTasks: async (storyId: string) => {
+        try {
+            const story = await ApiService.getStoryById(storyId);
+            if (!story || !story.autoUpdateStatus) {
+                return; // Don't auto-update if disabled
+            }
+
+            const tasks = await ApiService.getTasks(storyId);
+
+            if (tasks.length === 0) {
+                // No tasks, keep story as "todo"
+                if (story.status !== "todo") {
+                    const updatedStory: Story = {
+                        ...story,
+                        status: "todo",
+                    };
+                    await get().updateStory(updatedStory);
+                }
+                return;
+            }
+
+            // Calculate status based on task statuses
+            const todoTasks = tasks.filter((task) => task.status === "todo");
+            const doneTasks = tasks.filter((task) => task.status === "done");
+
+            let newStatus: StoryStatus;
+
+            if (doneTasks.length === tasks.length) {
+                // All tasks are done
+                newStatus = "done";
+            } else if (todoTasks.length === tasks.length) {
+                // All tasks are todo
+                newStatus = "todo";
+            } else {
+                // Mixed states or some tasks are doing
+                newStatus = "doing";
+            }
+
+            // Only update if status has changed
+            if (story.status !== newStatus) {
+                const updatedStory: Story = {
+                    ...story,
+                    status: newStatus,
+                };
+                await get().updateStory(updatedStory);
+            }
+        } catch (error) {
+            console.error("Error updating story status from tasks:", error);
+        }
+    },
+
+    toggleStoryAutoUpdate: async (storyId: string, autoUpdate: boolean) => {
+        try {
+            const story = await ApiService.getStoryById(storyId);
+            if (story) {
+                const updatedStory: Story = {
+                    ...story,
+                    autoUpdateStatus: autoUpdate,
+                };
+                await get().updateStory(updatedStory);
+            }
+        } catch (error) {
+            console.error("Error toggling story auto-update:", error);
+        }
+    },
+
     // Task actions
     loadTasks: async (storyId) => {
         try {
@@ -248,6 +361,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         try {
             const newTask = await ApiService.createTask(task);
             set((state) => ({ tasks: [...state.tasks, newTask] }));
+
+            // Update story status based on tasks
+            await get().updateStoryStatusFromTasks(newTask.storyId);
         } catch (error) {
             console.error("Error creating task:", error);
         }
@@ -260,6 +376,9 @@ export const useAppStore = create<AppState>((set, get) => ({
                 set((state) => ({
                     tasks: state.tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
                 }));
+
+                // Update story status based on tasks
+                await get().updateStoryStatusFromTasks(updatedTask.storyId);
             }
         } catch (error) {
             console.error("Error updating task:", error);
@@ -268,11 +387,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     deleteTask: async (id) => {
         try {
+            // Get the task before deleting to know which story to update
+            const task = await ApiService.getTaskById(id);
             const success = await ApiService.deleteTask(id);
             if (success) {
                 set((state) => ({
                     tasks: state.tasks.filter((t) => t.id !== id),
                 }));
+
+                // Update story status based on remaining tasks
+                if (task) {
+                    await get().updateStoryStatusFromTasks(task.storyId);
+                }
             }
         } catch (error) {
             console.error("Error deleting task:", error);
@@ -309,6 +435,8 @@ export const useAppStore = create<AppState>((set, get) => ({
             };
 
             await get().updateTask(updatedTask);
+
+            // updateTask already calls updateStoryStatusFromTasks, so no need to call it again
         } catch (error) {
             console.error("Error completing task:", error);
         }
