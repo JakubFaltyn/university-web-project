@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type * as trpcNext from "@trpc/server/adapters/next";
 import connectDB from "./mongodb";
+import { autoSeedDatabase } from "./utils/auto-seed";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CreateContextOptions {
@@ -12,8 +13,12 @@ interface CreateContextOptions {
  * This is useful for testing when we don't want to mock the request/response
  */
 export async function createContextInner(_opts: CreateContextOptions) {
-    // Ensure MongoDB connection
+    // Ensure MongoDB connection - fail fast if not available
     await connectDB();
+    console.log("✅ Database connected successfully");
+
+    // Auto-seed database if empty
+    await autoSeedDatabase();
 
     return {
         // Add any context data here (user session, etc.)

@@ -1,4 +1,4 @@
-import { KanbanBoard } from "@features/tasks/components/KanbanBoard";
+import { KanbanBoard } from "@features/tasks/components/kanban-board";
 import { getTasksPageData } from "@lib/queries";
 
 export default async function TasksPage() {

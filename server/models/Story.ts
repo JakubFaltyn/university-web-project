@@ -50,5 +50,4 @@ const StorySchema: Schema = new Schema(
 );
 
 const Story = mongoose.models.Story || mongoose.model<IStory>("Story", StorySchema);
-
-export default Story; 
+export default Story;

@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "concurrently \"pnpm dev:app\" \"pnpm dev:auth\" --names \"APP,AUTH\" --prefix-colors \"blue,green\"",
+    "dev:app": "next dev --turbo",
+    "dev:auth": "cross-env PORT=3001 bun run --hot auth/index.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "purge-db": "tsx scripts/purge-db.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -29,6 +32,7 @@
     "@types/jsonwebtoken": "^9.0.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.476.0",
     "mongoose": "^8.15.0",
@@ -40,8 +44,9 @@
     "superjson": "^2.2.2",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
+    "valibot": "^1.1.0",
     "zod": "^3.24.2",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -49,9 +54,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.2.0",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
     "typescript": "^5"
   }
 }

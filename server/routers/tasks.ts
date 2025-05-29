@@ -4,15 +4,13 @@ import Task, { type ITask } from "../models/Task";
 
 // Input schemas
 const createTaskSchema = z.object({
-    name: z.string().min(1),
+    title: z.string().min(1),
     description: z.string().optional(),
-    priority: z.enum(["low", "medium", "high"]),
-    storyId: z.string(),
-    estimatedTime: z.number().optional(),
-    status: z.enum(["todo", "doing", "done"]).default("todo"),
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    assignedUserId: z.string().optional(),
+    priority: z.enum(["low", "medium", "high"]).default("medium"),
+    status: z.enum(["todo", "in-progress", "done"]).default("todo"),
+    assigneeId: z.string().optional(),
+    projectId: z.string(),
+    dueDate: z.string().optional(),
 });
 
 const updateTaskSchema = createTaskSchema.partial().extend({
@@ -22,35 +20,41 @@ const updateTaskSchema = createTaskSchema.partial().extend({
 // Helper function to format task
 const formatTask = (task: ITask) => ({
     id: task._id.toString(),
-    name: task.name,
+    title: task.title,
     description: task.description,
     priority: task.priority,
-    storyId: task.storyId.toString(),
-    estimatedTime: task.estimatedTime,
     status: task.status,
+    assigneeId: task.assigneeId?.toString(),
+    projectId: task.projectId.toString(),
+    dueDate: task.dueDate,
     createdAt: task.createdAt,
-    startDate: task.startDate,
-    endDate: task.endDate,
-    assignedUserId: task.assignedUserId?.toString(),
 });
 
 export const tasksRouter = router({
-    // Get all tasks with optional story filter
-    getAll: publicProcedure
+    // Get all tasks
+    getAll: publicProcedure.query(async () => {
+        try {
+            const tasks = await Task.find({});
+            return tasks.map(formatTask);
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+            throw new Error("Failed to fetch tasks");
+        }
+    }),
+
+    // Get tasks by project ID
+    getByProjectId: publicProcedure
         .input(
-            z
-                .object({
-                    storyId: z.string().optional(),
-                })
-                .optional()
+            z.object({
+                projectId: z.string(),
+            })
         )
         .query(async ({ input }) => {
             try {
-                const filter = input?.storyId ? { storyId: input.storyId } : {};
-                const tasks = await Task.find(filter);
+                const tasks = await Task.find({ projectId: input.projectId });
                 return tasks.map(formatTask);
             } catch (error) {
-                console.error("Error fetching tasks:", error);
+                console.error("Error fetching tasks by project ID:", error);
                 throw new Error("Failed to fetch tasks");
             }
         }),

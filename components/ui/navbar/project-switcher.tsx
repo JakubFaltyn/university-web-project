@@ -1,17 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { ChevronsUpDown, FolderOpen, Settings } from "lucide-react";
+import { ChevronsUpDown, FolderOpen } from "lucide-react";
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuShortcut, DropdownMenuTrigger } from "@features/ui/dropdown-menu";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@features/ui/sidebar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAppStore } from "@lib/store";
 import { trpc } from "@/lib/trpc";
 
-export function TeamSwitcher({
-    teams,
+export function ProjectSwitcher({
+    defaultProjects,
 }: {
-    teams: {
+    defaultProjects: {
         name: string;
         logo: React.ElementType;
         plan: string;
@@ -34,17 +34,17 @@ export function TeamSwitcher({
         }
     };
 
-    // Use the active project or fallback to the default team data
-    const displayTeam = activeProject
+    // Use the active project or fallback to the default project data
+    const displayProject = activeProject
         ? {
               name: activeProject.name,
               logo: FolderOpen,
               plan: "Active Project",
               id: activeProject.id,
           }
-        : teams[0];
+        : defaultProjects[0];
 
-    if (!displayTeam) {
+    if (!displayProject) {
         return null;
     }
 
@@ -55,11 +55,11 @@ export function TeamSwitcher({
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                <displayTeam.logo className="size-4" />
+                                <displayProject.logo className="size-4" />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-semibold">{displayTeam.name}</span>
-                                <span className="truncate text-xs">{displayTeam.plan}</span>
+                                <span className="truncate font-semibold">{displayProject.name}</span>
+                                <span className="truncate text-xs">{displayProject.plan}</span>
                             </div>
                             <ChevronsUpDown className="ml-auto" />
                         </SidebarMenuButton>

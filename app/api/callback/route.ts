@@ -1,35 +1,15 @@
-import { client, setTokens } from "../../auth";
-import { subjects } from "../../../auth/subjects";
-import { redirect } from "next/navigation";
+import { client, setTokens } from "../../auth"
+import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: Request) {
-    const url = new URL(request.url);
-    const code = url.searchParams.get("code");
+export async function GET(req: NextRequest) {
+  const url = new URL(req.url)
+  const code = url.searchParams.get("code")
 
-    if (!code) {
-        return new Response("Missing authorization code", { status: 400 });
-    }
+  const exchanged = await client.exchange(code!, `${url.origin}/api/callback`)
 
-    try {
-        const tokens = await client.exchange(code, `${url.protocol}//${url.host}/api/callback`);
+  if (exchanged.err) return NextResponse.json(exchanged.err, { status: 400 })
 
-        if (tokens.err) {
-            console.error("Token exchange error:", tokens.err);
-            return new Response("Authentication failed", { status: 400 });
-        }
+  await setTokens(exchanged.tokens.access, exchanged.tokens.refresh)
 
-        const verified = await client.verify(subjects, tokens.tokens.access);
-
-        if (verified.err) {
-            console.error("Token verification error:", verified.err);
-            return new Response("Authentication failed", { status: 400 });
-        }
-
-        await setTokens(tokens.tokens.access, tokens.tokens.refresh);
-
-        return redirect("/");
-    } catch (error) {
-        console.error("Callback error:", error);
-        return new Response("Authentication failed", { status: 500 });
-    }
+  return NextResponse.redirect(`${url.origin}/`)
 }

@@ -7,7 +7,7 @@ const createUserSchema = z.object({
     firstName: z.string().min(1),
     lastName: z.string().min(1),
     email: z.string().email(),
-    role: z.enum(["admin", "user", "manager"]),
+    role: z.enum(["admin", "devops", "developer", "guest"]),
     defaultProjectId: z.string().optional(),
 });
 

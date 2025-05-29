@@ -3,9 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@features/ui/button";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from "@features/ui/form";
-import { Input } from "@features/ui/input";
+import { Button } from "@/components/ui/button";
+import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Project } from "@lib/types";
 import { useAppStore } from "@lib/store";
 import { useEffect } from "react";

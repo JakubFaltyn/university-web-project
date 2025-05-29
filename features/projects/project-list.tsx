@@ -3,16 +3,14 @@
 import { useState } from "react";
 import { useAppStore } from "@lib/store";
 import { Project, UserRole } from "@lib/types";
-import { Button } from "@features/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@features/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProjectForm } from "./forms/project-form";
 import { canCreate, canModify, canDelete } from "@lib/permissions";
-import { useAuth } from "@features/auth/openauth-provider";
 import { trpc } from "@/lib/trpc";
 
 export function ProjectList() {
     const { setActiveProject, activeProject, currentUser } = useAppStore();
-    const { user: authUser } = useAuth();
     const [showCreateDialog, setShowCreateDialog] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
 
@@ -31,23 +29,15 @@ export function ProjectList() {
         },
     });
 
-    // Determine current user role (OAuth or local)
-    const currentRole = authUser?.role || currentUser?.role;
-    const canUserCreate = currentRole ? canCreate(currentRole as UserRole) : false;
-    const canUserModify = currentRole ? canModify(currentRole as UserRole) : false;
-    const canUserDelete = currentRole ? canDelete(currentRole as UserRole) : false;
-
     const handleSetActiveProject = (project: Project) => {
         setActiveProject(project);
     };
 
     const handleEditProject = (project: Project) => {
-        if (!canUserModify) return;
         setEditingProject(project);
     };
 
     const handleDeleteProject = (id: string) => {
-        if (!canUserDelete) return;
         if (confirm("Are you sure you want to delete this project? This will also delete all stories and tasks associated with it.")) {
             deleteProjectMutation.mutate({ id });
         }
@@ -78,7 +68,6 @@ export function ProjectList() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Projects</h2>
-                {canUserCreate && (
                     <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                         <DialogTrigger asChild>
                             <Button>Add Project</Button>
@@ -90,13 +79,11 @@ export function ProjectList() {
                             <ProjectForm onSuccess={handleCreateFormSuccess} />
                         </DialogContent>
                     </Dialog>
-                )}
-                {!canUserCreate && <div className="text-sm text-muted-foreground">Read-only mode</div>}
             </div>
 
             {projects.length === 0 ? (
                 <div className="text-center p-8 border border-dashed rounded-lg">
-                    <p className="text-muted-foreground">No projects yet. {canUserCreate ? "Create one to get started." : "Please sign in with appropriate permissions to create projects."}</p>
+                    <p className="text-muted-foreground">No projects yet. Please sign in with appropriate permissions to create projects.</p>
                 </div>
             ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -104,9 +91,7 @@ export function ProjectList() {
                         <div key={project.id} className={`border rounded-lg p-4 transition-colors ${activeProject?.id === project.id ? "border-primary bg-primary/5" : "hover:bg-muted/50"}`}>
                             <div className="flex justify-between items-start">
                                 <h3 className="font-medium text-lg">{project.name}</h3>
-                                {(canUserModify || canUserDelete) && (
                                     <div className="space-x-1">
-                                        {canUserModify && (
                                             <Dialog
                                                 open={editingProject?.id === project.id}
                                                 onOpenChange={(open) => {
@@ -124,8 +109,6 @@ export function ProjectList() {
                                                     <ProjectForm project={project} onSuccess={handleEditFormSuccess} />
                                                 </DialogContent>
                                             </Dialog>
-                                        )}
-                                        {canUserDelete && (
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -134,9 +117,7 @@ export function ProjectList() {
                                                 disabled={deleteProjectMutation.isPending}>
                                                 {deleteProjectMutation.isPending ? "Deleting..." : "Delete"}
                                             </Button>
-                                        )}
                                     </div>
-                                )}
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
                             <div className="text-xs text-muted-foreground">Created: {new Date(project.createdAt).toLocaleDateString()}</div>

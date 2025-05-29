@@ -3,16 +3,13 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAppStore } from "@lib/store";
-import { Button } from "@features/ui/button";
-import { ThemeToggle } from "@features/ui/theme-toggle";
-import { LogOut, LogIn } from "lucide-react";
-import { useAuth } from "@features/auth/openauth-provider";
-import { login, logout } from "@/app/actions";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LogIn } from "lucide-react";
 
 export function Navigation() {
     const pathname = usePathname();
     const { activeProject } = useAppStore();
-    const { user, isAuthenticated, isLoading } = useAuth();
 
     const routes = [
         {
@@ -38,14 +35,6 @@ export function Navigation() {
             disabled: !activeProject,
         },
     ];
-
-    const handleSignOut = async () => {
-        await logout();
-    };
-
-    const handleSignIn = async () => {
-        await login();
-    };
 
     return (
         <nav className="border-b">
@@ -76,28 +65,10 @@ export function Navigation() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        {isLoading ? (
-                            <div className="text-sm text-muted-foreground">Loading...</div>
-                        ) : isAuthenticated && user ? (
-                            <div className="flex items-center gap-2">
-                                <div className="text-sm">
-                                    <span className="text-muted-foreground">Welcome, </span>
-                                    <span className="font-medium">{user.name}</span>
-                                    {user.role === "guest" && (
-                                        <span className="ml-2 bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs font-medium">Guest (Read-only)</span>
-                                    )}
-                                </div>
-                                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                                    <LogOut className="h-4 w-4" />
-                                    <span className="sr-only">Sign out</span>
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button variant="default" size="sm" onClick={handleSignIn}>
-                                <LogIn className="h-4 w-4 mr-2" />
-                                Sign in
-                            </Button>
-                        )}
+                        <Button variant="default" size="sm">
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Sign in
+                        </Button>
                         <ThemeToggle />
                     </div>
                 </div>

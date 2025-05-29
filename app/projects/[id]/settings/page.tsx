@@ -2,11 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useAppStore } from "@lib/store";
-import { Button } from "@features/ui/button";
-import { Input } from "@features/ui/input";
-import { Label } from "@features/ui/label";
-import { Textarea } from "@features/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@features/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
 
 import { Trash2, Save } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -17,56 +18,60 @@ import { DeleteProjectModal } from "./delete-project-modal";
 export default function ProjectSettingsPage() {
     const params = useParams();
     const router = useRouter();
-    const { projects, activeProject, updateProject, setActiveProject } = useAppStore();
+    const { setActiveProject } = useAppStore();
 
-    const [project, setProject] = useState<Project | null>(null);
+    // Fetch project data using tRPC
+    const projectId = params.id as string;
+    const { data: project, isLoading, error, refetch } = trpc.projects.getById.useQuery({ id: projectId }, { enabled: !!projectId });
+
+    // Update project mutation
+    const updateProjectMutation = trpc.projects.update.useMutation({
+        onSuccess: () => {
+            console.log("Project updated successfully");
+            refetch(); // Refresh the project data
+        },
+        onError: (error) => {
+            console.error("Error updating project:", error);
+        },
+    });
+
     const [formData, setFormData] = useState({
         name: "",
         description: "",
     });
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [loading, setLoading] = useState(false);
 
+    // Update form data when project loads
     useEffect(() => {
-        const projectId = params.id as string;
-        const foundProject = projects.find((p) => p.id === projectId);
-
-        if (foundProject) {
-            setProject(foundProject);
+        if (project) {
             setFormData({
-                name: foundProject.name,
-                description: foundProject.description || "",
+                name: project.name,
+                description: project.description || "",
             });
+            // Set as active project
+            setActiveProject(project);
+        }
+    }, [project, setActiveProject]);
 
-            // Set as active project if it's not already
-            if (activeProject?.id !== foundProject.id) {
-                setActiveProject(foundProject.id);
-            }
-        } else {
-            // Project not found, redirect to dashboard
+    // Handle project not found or error
+    useEffect(() => {
+        if (error) {
+            console.error("Error loading project:", error);
             router.push("/");
         }
-    }, [params.id, projects, activeProject, setActiveProject, router]);
+    }, [error, router]);
 
     const handleSave = async () => {
         if (!project) return;
 
-        setLoading(true);
         try {
-            const updatedProject = {
-                ...project,
+            await updateProjectMutation.mutateAsync({
+                id: project.id,
                 name: formData.name,
                 description: formData.description,
-            };
-
-            await updateProject(updatedProject);
-
-            // Show success message (you can add a toast here)
-            console.log("Project updated successfully");
+            });
         } catch (error) {
             console.error("Error updating project:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -77,12 +82,25 @@ export default function ProjectSettingsPage() {
         }));
     };
 
-    if (!project) {
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <h2 className="text-lg font-semibold">Loading project...</h2>
+                    <p className="text-muted-foreground">Please wait while we fetch the project details.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Project not found
+    if (!project && !isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <h2 className="text-lg font-semibold">Project not found</h2>
-                    <p className="text-muted-foreground">The project you're looking for doesn't exist.</p>
+                    <p className="text-muted-foreground">The project you&apos;re looking for doesn&apos;t exist.</p>
                     <Button asChild className="mt-4">
                         <Link href="/">Go to Dashboard</Link>
                     </Button>
@@ -95,14 +113,14 @@ export default function ProjectSettingsPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-2xl font-bold">Project Settings</h1>
-                <p className="text-muted-foreground">Manage settings for "{project.name}"</p>
+                <p className="text-muted-foreground">Manage settings for &ldquo;{project?.name}&rdquo;</p>
             </div>
 
             <div className="grid gap-6 max-w-2xl">
                 <Card>
                     <CardHeader>
                         <CardTitle>General Settings</CardTitle>
-                        <CardDescription>Update your project's basic information</CardDescription>
+                        <CardDescription>Update your project&apos;s basic information</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -122,9 +140,9 @@ export default function ProjectSettingsPage() {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button onClick={handleSave} disabled={loading}>
+                            <Button onClick={handleSave} disabled={updateProjectMutation.isPending}>
                                 <Save className="h-4 w-4 mr-2" />
-                                {loading ? "Saving..." : "Save Changes"}
+                                {updateProjectMutation.isPending ? "Saving..." : "Save Changes"}
                             </Button>
                         </div>
                     </CardContent>
@@ -144,7 +162,7 @@ export default function ProjectSettingsPage() {
                 </Card>
             </div>
 
-            <DeleteProjectModal project={project} open={showDeleteModal} onOpenChange={setShowDeleteModal} />
+            {project && <DeleteProjectModal project={project} open={showDeleteModal} onOpenChange={setShowDeleteModal} />}
         </div>
     );
 }

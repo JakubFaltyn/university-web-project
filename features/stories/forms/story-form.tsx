@@ -1,168 +1,152 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@features/ui/button";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from "@features/ui/form";
-import { Input } from "@features/ui/input";
-import { Priority, Story, User } from "@lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppStore } from "@lib/store";
-import { useEffect } from "react";
+import { Story } from "@lib/types";
+import { trpc } from "@/lib/trpc";
 
-const formSchema = z.object({
-    name: z.string().min(3, {
-        message: "Story name must be at least 3 characters.",
-    }),
-    description: z.string().min(10, {
-        message: "Description must be at least 10 characters.",
-    }),
-    priority: z.enum(["low", "medium", "high"] as const),
-    ownerId: z.string({
-        required_error: "Please select an owner for this story.",
-    }),
+const storySchema = z.object({
+    name: z.string().min(1, "Story name is required"),
+    description: z.string().optional(),
+    priority: z.enum(["low", "medium", "high"]),
+    ownerId: z.string().min(1, "Owner is required"),
+    projectId: z.string().min(1, "Project is required"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type StoryFormData = z.infer<typeof storySchema>;
 
 interface StoryFormProps {
     story?: Story;
-    projectId: string;
     onSuccess?: () => void;
+    onCancel?: () => void;
 }
 
-export function StoryForm({ story, projectId, onSuccess }: StoryFormProps) {
-    const { createStory, updateStory, users } = useAppStore();
+export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
+    const { activeProject } = useAppStore();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            name: "",
-            description: "",
-            priority: "medium",
-            ownerId: "",
+    // Fetch users for owner selection
+    const { data: users = [] } = trpc.users.getAll.useQuery();
+
+    // tRPC mutations
+    const createStoryMutation = trpc.stories.create.useMutation({
+        onSuccess: () => {
+            onSuccess?.();
         },
     });
 
-    useEffect(() => {
-        if (story) {
-            form.reset({
-                name: story.name,
-                description: story.description,
-                priority: story.priority,
-                ownerId: story.ownerId,
-            });
-        } else {
-            form.reset({
-                name: "",
-                description: "",
-                priority: "medium",
-                ownerId: "",
-            });
-        }
-    }, [story?.id, form]);
+    const updateStoryMutation = trpc.stories.update.useMutation({
+        onSuccess: () => {
+            onSuccess?.();
+        },
+    });
 
-    function onSubmit(values: FormValues) {
-        if (story) {
-            updateStory({
-                ...story,
-                ...values,
-            });
-        } else {
-            createStory({
-                ...values,
-                projectId,
-                status: "todo",
-            });
-        }
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        setValue,
+        watch,
+        reset,
+    } = useForm<StoryFormData>({
+        resolver: zodResolver(storySchema),
+        defaultValues: {
+            name: story?.name || "",
+            description: story?.description || "",
+            priority: story?.priority || "medium",
+            ownerId: story?.ownerId || "",
+            projectId: story?.projectId || activeProject?.id || "",
+        },
+    });
 
-        if (onSuccess) {
-            onSuccess();
+    const watchedPriority = watch("priority");
+    const watchedOwnerId = watch("ownerId");
+
+    const onSubmit = async (data: StoryFormData) => {
+        setIsSubmitting(true);
+        try {
+            if (story) {
+                await updateStoryMutation.mutateAsync({
+                    id: story.id,
+                    ...data,
+                });
+            } else {
+                await createStoryMutation.mutateAsync(data);
+            }
+            reset();
+        } catch (error) {
+            console.error("Error saving story:", error);
+        } finally {
+            setIsSubmitting(false);
         }
-    }
+    };
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Story Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Enter story name" {...field} />
-                            </FormControl>
-                            <FormDescription>Name your story with something clear and descriptive.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description</FormLabel>
-                            <FormControl>
-                                <textarea
-                                    className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder="Describe your story"
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormDescription>Provide a detailed description of what this story is about.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="priority"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Priority</FormLabel>
-                            <FormControl>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    {...field}>
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </FormControl>
-                            <FormDescription>Set the priority for this story.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="ownerId"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Story Owner</FormLabel>
-                            <FormControl>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    {...field}>
-                                    <option value="" disabled>
-                                        Select an owner
-                                    </option>
-                                    {users.map((user: User) => (
-                                        <option key={user.id} value={user.id}>
-                                            {user.firstName} {user.lastName} ({user.role})
-                                        </option>
-                                    ))}
-                                </select>
-                            </FormControl>
-                            <FormDescription>Assign an owner to this story.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <Button type="submit">{story ? "Update Story" : "Create Story"}</Button>
-            </form>
-        </Form>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="name">Story Name</Label>
+                <Input id="name" {...register("name")} placeholder="Enter story name" />
+                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea id="description" {...register("description")} placeholder="Enter story description" rows={3} />
+                {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={watchedPriority} onValueChange={(value) => setValue("priority", value as "low" | "medium" | "high")}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                </Select>
+                {errors.priority && <p className="text-sm text-destructive">{errors.priority.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label>Owner</Label>
+                <Select value={watchedOwnerId} onValueChange={(value) => setValue("ownerId", value)}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select owner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {users.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                                {user.firstName} {user.lastName} ({user.role})
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                {errors.ownerId && <p className="text-sm text-destructive">{errors.ownerId.message}</p>}
+            </div>
+
+            <input type="hidden" {...register("projectId")} />
+
+            <div className="flex justify-end space-x-2">
+                {onCancel && (
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                )}
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : story ? "Update" : "Create"}
+                </Button>
+            </div>
+        </form>
     );
 }

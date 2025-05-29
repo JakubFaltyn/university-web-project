@@ -3,14 +3,23 @@
 import { useAppStore } from "@lib/store";
 import { useState } from "react";
 import { User, UserRole } from "@lib/types";
-import { Button } from "@features/ui/button";
+import { Button } from "@/components/ui/button";
 import { isReadOnly } from "@lib/permissions";
-import { useAuth } from "@features/auth/openauth-provider";
 import { trpc } from "@/lib/trpc";
 
-export function UserInfo() {
+interface AuthUser {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+}
+
+interface UserInfoProps {
+    authUser?: AuthUser | null;
+}
+
+export function UserInfo({ authUser }: UserInfoProps) {
     const { currentUser, setCurrentUser } = useAppStore();
-    const { user: authUser, isAuthenticated } = useAuth();
     const [showUserSelector, setShowUserSelector] = useState(false);
 
     // Fetch users using tRPC
@@ -35,7 +44,7 @@ export function UserInfo() {
     };
 
     // If user is logged in via OpenAuth, show OAuth user info
-    if (isAuthenticated && authUser) {
+    if (authUser) {
         const oauthUser = {
             id: authUser.id,
             firstName: authUser.name?.split(" ")[0] || "OAuth",

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@lib/store";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@features/ui/dialog";
-import { Button } from "@features/ui/button";
-import { Input } from "@features/ui/input";
-import { Label } from "@features/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Project } from "@lib/types";
+import { trpc } from "@/lib/trpc";
 
 interface DeleteProjectModalProps {
     project: Project;
@@ -18,31 +19,38 @@ interface DeleteProjectModalProps {
 
 export function DeleteProjectModal({ project, open, onOpenChange }: DeleteProjectModalProps) {
     const [confirmText, setConfirmText] = useState("");
-    const [isDeleting, setIsDeleting] = useState(false);
-    const { deleteProject } = useAppStore();
+    const { setActiveProject } = useAppStore();
     const router = useRouter();
+
+    // Delete project mutation
+    const deleteProjectMutation = trpc.projects.delete.useMutation({
+        onSuccess: () => {
+            console.log("Project deleted successfully");
+            // Clear active project if it was the deleted one
+            setActiveProject(null);
+            // Close modal and redirect to dashboard
+            onOpenChange(false);
+            router.push("/");
+        },
+        onError: (error) => {
+            console.error("Error deleting project:", error);
+        },
+    });
 
     const isConfirmValid = confirmText === project.name;
 
     const handleDelete = async () => {
         if (!isConfirmValid) return;
 
-        setIsDeleting(true);
         try {
-            await deleteProject(project.id);
-
-            // Close modal and redirect to dashboard
-            onOpenChange(false);
-            router.push("/");
+            await deleteProjectMutation.mutateAsync({ id: project.id });
         } catch (error) {
             console.error("Error deleting project:", error);
-        } finally {
-            setIsDeleting(false);
         }
     };
 
     const handleClose = () => {
-        if (!isDeleting) {
+        if (!deleteProjectMutation.isPending) {
             setConfirmText("");
             onOpenChange(false);
         }
@@ -57,8 +65,8 @@ export function DeleteProjectModal({ project, open, onOpenChange }: DeleteProjec
                         Delete Project
                     </DialogTitle>
                     <DialogDescription>
-                        This action cannot be undone. This will permanently delete the project <span className="font-semibold">"{project.name}"</span> and all of its data including stories, tasks, and
-                        associated files.
+                        This action cannot be undone. This will permanently delete the project <span className="font-semibold">&ldquo;{project.name}&rdquo;</span> and all of its data including
+                        stories, tasks, and associated files.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -75,27 +83,27 @@ export function DeleteProjectModal({ project, open, onOpenChange }: DeleteProjec
 
                     <div className="space-y-2">
                         <Label htmlFor="confirm-project-name">
-                            Type the project name <span className="font-semibold">"{project.name}"</span> to confirm:
+                            Type the project name <span className="font-semibold">&ldquo;{project.name}&rdquo;</span> to confirm:
                         </Label>
                         <Input
                             id="confirm-project-name"
                             value={confirmText}
                             onChange={(e) => setConfirmText(e.target.value)}
                             placeholder={project.name}
-                            disabled={isDeleting}
+                            disabled={deleteProjectMutation.isPending}
                             className={confirmText && !isConfirmValid ? "border-destructive focus-visible:ring-destructive" : ""}
                         />
-                        {confirmText && !isConfirmValid && <p className="text-sm text-destructive">Project name doesn't match. Please type "{project.name}" exactly.</p>}
+                        {confirmText && !isConfirmValid && <p className="text-sm text-destructive">Project name doesn&apos;t match. Please type &ldquo;{project.name}&rdquo; exactly.</p>}
                     </div>
                 </div>
 
                 <DialogFooter className="gap-2">
-                    <Button variant="outline" onClick={handleClose} disabled={isDeleting}>
+                    <Button variant="outline" onClick={handleClose} disabled={deleteProjectMutation.isPending}>
                         Cancel
                     </Button>
-                    <Button variant="destructive" onClick={handleDelete} disabled={!isConfirmValid || isDeleting}>
+                    <Button variant="destructive" onClick={handleDelete} disabled={!isConfirmValid || deleteProjectMutation.isPending}>
                         <Trash2 className="h-4 w-4 mr-2" />
-                        {isDeleting ? "Deleting..." : "Delete Project"}
+                        {deleteProjectMutation.isPending ? "Deleting..." : "Delete Project"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

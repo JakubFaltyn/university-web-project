@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AppSidebar } from "@features/ui/navbar/app-sidebar";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@features/ui/breadcrumb";
-import { Separator } from "@features/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@features/ui/sidebar";
-import { ThemeToggle } from "@features/ui/theme-toggle";
-import { AppProvider } from "@features/ui/app-provider";
-import { ThemeProvider } from "@features/ui/theme-provider";
-import { AuthProvider } from "@features/auth/openauth-provider";
+import { AppSidebar } from "@/components/ui/navbar/app-sidebar";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AppProvider } from "@/components/ui/app-provider";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { TRPCProvider } from "@/lib/trpc-provider";
 
 const geistSans = Geist({
@@ -34,7 +33,6 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-                <AuthProvider>
                     <ThemeProvider defaultTheme="system" storageKey="managme-ui-theme">
                         <TRPCProvider>
                             <AppProvider>
@@ -67,7 +65,6 @@ export default function RootLayout({
                             </AppProvider>
                         </TRPCProvider>
                     </ThemeProvider>
-                </AuthProvider>
             </body>
         </html>
     );

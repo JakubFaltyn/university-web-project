@@ -1,12 +1,11 @@
-import { createSubjects } from "@openauthjs/openauth";
+import { object, string } from "valibot"
+import { createSubjects } from "@openauthjs/openauth/subject"
 
 export const subjects = createSubjects({
-    user: {
-        id: "string",
-        email: "string",
-        name: "string",
-        role: "string",
-    },
-});
-
-export const { user } = subjects;
+  user: object({
+    id: string(),
+    email: string(),
+    name: string(),
+    role: string(),
+  }),
+})

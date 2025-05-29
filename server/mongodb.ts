@@ -35,6 +35,10 @@ async function connectDB() {
     if (!cached!.promise) {
         const opts = {
             bufferCommands: false,
+            serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+            socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+            maxPoolSize: 10, // Maintain up to 10 socket connections
+            minPoolSize: 5, // Maintain a minimum of 5 socket connections
         };
 
         cached!.promise = mongoose.connect(MONGODB_URI!, opts);
@@ -46,6 +50,16 @@ async function connectDB() {
     } catch (e) {
         cached!.promise = null;
         console.error("MongoDB Atlas connection error:", e);
+
+        // In development, provide helpful error message
+        if (process.env.NODE_ENV === "development") {
+            console.log("\n🔧 Development Setup Help:");
+            console.log("1. Check if your IP is whitelisted in MongoDB Atlas");
+            console.log("2. Verify your MongoDB connection string in .env.local");
+            console.log("3. Consider using a local MongoDB instance for development");
+            console.log("4. You can initialize sample data using the /api/trpc/init.initializeDatabase endpoint\n");
+        }
+
         throw e;
     }
 

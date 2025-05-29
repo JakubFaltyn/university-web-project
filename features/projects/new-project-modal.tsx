@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useAppStore } from "@lib/store";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@features/ui/dialog";
-import { Button } from "@features/ui/button";
-import { Input } from "@features/ui/input";
-import { Label } from "@features/ui/label";
-import { Textarea } from "@features/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 
 interface NewProjectModalProps {
