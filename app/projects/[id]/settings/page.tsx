@@ -1,16 +1,17 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useAppStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { useAppStore } from "@lib/store";
+import { Button } from "@features/ui/button";
+import { Input } from "@features/ui/input";
+import { Label } from "@features/ui/label";
+import { Textarea } from "@features/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@features/ui/card";
+
 import { Trash2, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Project } from "@lib/types";
 import { DeleteProjectModal } from "./delete-project-modal";
 
 export default function ProjectSettingsPage() {
@@ -18,7 +19,7 @@ export default function ProjectSettingsPage() {
     const router = useRouter();
     const { projects, activeProject, updateProject, setActiveProject } = useAppStore();
 
-    const [project, setProject] = useState<any>(null);
+    const [project, setProject] = useState<Project | null>(null);
     const [formData, setFormData] = useState({
         name: "",
         description: "",

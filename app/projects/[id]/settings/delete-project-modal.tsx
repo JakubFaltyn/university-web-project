@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/lib/store";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useAppStore } from "@lib/store";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@features/ui/dialog";
+import { Button } from "@features/ui/button";
+import { Input } from "@features/ui/input";
+import { Label } from "@features/ui/label";
 import { AlertTriangle, Trash2 } from "lucide-react";
-import { Project } from "@/lib/types";
+import { Project } from "@lib/types";
 
 interface DeleteProjectModalProps {
     project: Project;

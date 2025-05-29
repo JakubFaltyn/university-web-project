@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import AppProvider from "@/components/AppProvider";
-import { ThemeProvider } from "@/lib/theme-provider";
-import { AuthProvider } from "@/components/SessionProvider";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AppSidebar } from "@features/ui/navbar/app-sidebar";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@features/ui/breadcrumb";
+import { Separator } from "@features/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@features/ui/sidebar";
+import { ThemeToggle } from "@features/ui/theme-toggle";
+import { AppProvider } from "@features/ui/app-provider";
+import { ThemeProvider } from "@features/ui/theme-provider";
+import { AuthProvider } from "@features/auth/openauth-provider";
+import { TRPCProvider } from "@/lib/trpc-provider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -35,34 +36,36 @@ export default function RootLayout({
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
                 <AuthProvider>
                     <ThemeProvider defaultTheme="system" storageKey="managme-ui-theme">
-                        <AppProvider>
-                            <SidebarProvider>
-                                <AppSidebar />
-                                <SidebarInset>
-                                    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-                                        <div className="flex items-center gap-2 px-4">
-                                            <SidebarTrigger className="-ml-1" />
-                                            <Separator orientation="vertical" className="mr-2 h-4" />
-                                            <Breadcrumb>
-                                                <BreadcrumbList>
-                                                    <BreadcrumbItem className="hidden md:block">
-                                                        <BreadcrumbLink href="/">ManagME</BreadcrumbLink>
-                                                    </BreadcrumbItem>
-                                                    <BreadcrumbSeparator className="hidden md:block" />
-                                                    <BreadcrumbItem>
-                                                        <BreadcrumbPage>Project Management</BreadcrumbPage>
-                                                    </BreadcrumbItem>
-                                                </BreadcrumbList>
-                                            </Breadcrumb>
-                                        </div>
-                                        <div className="ml-auto flex items-center gap-2 px-4">
-                                            <ThemeToggle />
-                                        </div>
-                                    </header>
-                                    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
-                                </SidebarInset>
-                            </SidebarProvider>
-                        </AppProvider>
+                        <TRPCProvider>
+                            <AppProvider>
+                                <SidebarProvider>
+                                    <AppSidebar />
+                                    <SidebarInset>
+                                        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+                                            <div className="flex items-center gap-2 px-4">
+                                                <SidebarTrigger className="-ml-1" />
+                                                <Separator orientation="vertical" className="mr-2 h-4" />
+                                                <Breadcrumb>
+                                                    <BreadcrumbList>
+                                                        <BreadcrumbItem className="hidden md:block">
+                                                            <BreadcrumbLink href="/">ManagME</BreadcrumbLink>
+                                                        </BreadcrumbItem>
+                                                        <BreadcrumbSeparator className="hidden md:block" />
+                                                        <BreadcrumbItem>
+                                                            <BreadcrumbPage>Project Management</BreadcrumbPage>
+                                                        </BreadcrumbItem>
+                                                    </BreadcrumbList>
+                                                </Breadcrumb>
+                                            </div>
+                                            <div className="ml-auto flex items-center gap-2 px-4">
+                                                <ThemeToggle />
+                                            </div>
+                                        </header>
+                                        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+                                    </SidebarInset>
+                                </SidebarProvider>
+                            </AppProvider>
+                        </TRPCProvider>
                     </ThemeProvider>
                 </AuthProvider>
             </body>

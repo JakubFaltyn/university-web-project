@@ -1,30 +1,27 @@
 "use client";
 
-import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@features/ui/button";
+import { login } from "@/app/actions";
+import { useAuth } from "@features/auth/openauth-provider";
 
 export default function SignIn() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
 
     useEffect(() => {
         // Check if user is already signed in
-        getSession().then((session) => {
-            if (session) {
-                router.push("/");
-            }
-        });
-    }, [router]);
+        if (!authLoading && isAuthenticated) {
+            router.push("/");
+        }
+    }, [router, isAuthenticated, authLoading]);
 
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         try {
-            await signIn("google", {
-                callbackUrl: "/",
-                redirect: true,
-            });
+            await login();
         } catch (error) {
             console.error("Sign in error:", error);
             setIsLoading(false);
