@@ -1,14 +1,16 @@
 "use client";
 
-import { Bell, ChevronsUpDown, LogOut, Settings, User as UserIcon } from "lucide-react";
+import { ChevronsUpDown, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAppStore } from "@lib/store";
 import { User } from "@lib/types";
 import { useTRPC } from "@/lib/trpc/context-provider";
 import { useQuery } from "@tanstack/react-query";
+import { logout } from "@/app/actions";
+
 export function NavUser({
     user,
 }: {
@@ -120,7 +122,7 @@ export function NavUser({
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
+                        {/* <DropdownMenuGroup>
                             <DropdownMenuItem>
                                 <UserIcon />
                                 Profile
@@ -133,7 +135,7 @@ export function NavUser({
                                 <Bell />
                                 Notifications
                             </DropdownMenuItem>
-                        </DropdownMenuGroup>
+                        </DropdownMenuGroup> */}
 
                         {showUserSwitching && (
                             <>
@@ -158,9 +160,13 @@ export function NavUser({
                         )}
 
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <LogOut />
-                            Log out
+                        <DropdownMenuItem asChild>
+                            <form action={logout} className="w-full">
+                                <button type="submit" className="flex w-full items-center gap-2 p-0">
+                                    <LogOut />
+                                    Log out
+                                </button>
+                            </form>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

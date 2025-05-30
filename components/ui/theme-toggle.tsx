@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { MonitorSpeaker, MoonIcon, SunIcon } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "./theme-provider";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./dialog";
 
@@ -113,9 +113,18 @@ export function ThemeToggleSimple() {
         );
     }
 
+    // Get the current icon based on theme
+    const getCurrentIcon = () => {
+        if (theme === "dark") return MoonIcon;
+        if (theme === "light") return SunIcon;
+        return MonitorSpeaker; // system
+    };
+
+    const CurrentIcon = getCurrentIcon();
+
     return (
         <Button variant="ghost" size="sm" onClick={handleToggle} className="h-8 w-8 px-0">
-            <SunIcon className="h-4 w-4" />
+            <CurrentIcon className="h-4 w-4" />
             <span className="sr-only">Toggle theme</span>
         </Button>
     );

@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppStore } from "@lib/store";
@@ -43,14 +43,7 @@ export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
     const createStoryMutation = useCreateStoryMutation();
     const updateStoryMutation = useUpdateStoryMutation();
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-        setValue,
-        watch,
-        reset,
-    } = useForm<StoryFormData>({
+    const form = useForm<StoryFormData>({
         resolver: zodResolver(storySchema),
         defaultValues: {
             name: story?.name || "",
@@ -60,9 +53,6 @@ export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
             projectId: story?.projectId || activeProject?.id || "",
         },
     });
-
-    const watchedPriority = watch("priority");
-    const watchedOwnerId = watch("ownerId");
 
     const onSubmit = async (data: StoryFormData) => {
         setIsSubmitting(true);
@@ -75,7 +65,7 @@ export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
             } else {
                 await createStoryMutation.mutateAsync(data);
             }
-            reset();
+            form.reset();
             onSuccess?.();
         } catch (error) {
             console.error("Error saving story:", error);
@@ -85,63 +75,111 @@ export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="name">Story Name</Label>
-                <Input id="name" {...register("name")} placeholder="Enter story name" />
-                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-            </div>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Story Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter story name" {...field} />
+                            </FormControl>
+                            <FormDescription>Name your story with something clear and descriptive.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-            <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" {...register("description")} placeholder="Enter story description" rows={3} />
-                {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
-            </div>
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Enter story description" rows={3} {...field} />
+                            </FormControl>
+                            <FormDescription>Provide a detailed description of what this story involves.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-            <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select value={watchedPriority} onValueChange={(value) => setValue("priority", value as "low" | "medium" | "high")}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                </Select>
-                {errors.priority && <p className="text-sm text-destructive">{errors.priority.message}</p>}
-            </div>
+                <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Priority</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select priority" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>Set the priority level for this story.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-            <div className="space-y-2">
-                <Label>Owner</Label>
-                <Select value={watchedOwnerId} onValueChange={(value) => setValue("ownerId", value)}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select owner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {users.map((user: any) => (
-                            <SelectItem key={user.id} value={user.id}>
-                                {user.firstName} {user.lastName} ({user.role})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {errors.ownerId && <p className="text-sm text-destructive">{errors.ownerId.message}</p>}
-            </div>
+                <FormField
+                    control={form.control}
+                    name="ownerId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Owner</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select owner" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {users.map((user: { id: string; firstName: string; lastName: string; role: string }) => (
+                                        <SelectItem key={user.id} value={user.id}>
+                                            {user.firstName} {user.lastName} ({user.role})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>Assign an owner responsible for this story.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-            <input type="hidden" {...register("projectId")} />
+                <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                        <FormItem className="hidden">
+                            <FormControl>
+                                <Input type="hidden" {...field} />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
 
-            <div className="flex justify-end space-x-2">
-                {onCancel && (
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
+                <div className="flex justify-end space-x-2">
+                    {onCancel && (
+                        <Button type="button" variant="outline" onClick={onCancel}>
+                            Cancel
+                        </Button>
+                    )}
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Saving..." : story ? "Update Story" : "Create Story"}
                     </Button>
-                )}
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : story ? "Update" : "Create"}
-                </Button>
-            </div>
-        </form>
+                </div>
+            </form>
+        </Form>
     );
 }
