@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Task, User } from "@lib/types";
 import { useAppStore } from "@lib/store";
 import { useEffect } from "react";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
+import { useCreateTaskMutation, useUpdateTaskMutation } from "../api/mutations";
 
 const formSchema = z.object({
     name: z.string().min(3, {
@@ -33,29 +36,34 @@ interface TaskFormProps {
 }
 
 export function TaskForm({ task, storyId, onSuccess }: TaskFormProps) {
-    const { createTask, updateTask, users } = useAppStore();
-    const developerAndDevOpsUsers = users.filter((user) => user.role === "developer" || user.role === "devops");
+    const trpc = useTRPC();
+
+    // Fetch users using tRPC
+    const { data: users = [] } = useQuery(trpc.users.getAll.queryOptions());
+    const developerAndDevOpsUsers = users.filter((user: any) => user.role === "developer" || user.role === "devops");
+
+    // Use tRPC mutations
+    const createTaskMutation = useCreateTaskMutation();
+    const updateTaskMutation = useUpdateTaskMutation();
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: "",
-            description: "",
-            priority: "medium",
-            estimatedTime: 1,
-            assignedUserId: "",
+            name: task?.title || "",
+            description: task?.description || "",
+            priority: task?.priority || "medium",
+            estimatedTime: task?.estimatedTime || 1,
+            assignedUserId: task?.assignedUserId || "",
         },
     });
 
     useEffect(() => {
         if (task) {
-            form.reset({
-                name: task.name,
-                description: task.description,
-                priority: task.priority,
-                estimatedTime: task.estimatedTime,
-                assignedUserId: task.assignedUserId || "",
-            });
+            form.setValue("name", task.title);
+            form.setValue("description", task.description);
+            form.setValue("priority", task.priority);
+            form.setValue("estimatedTime", task.estimatedTime);
+            form.setValue("assignedUserId", task.assignedUserId || "");
         } else {
             form.reset({
                 name: "",
@@ -65,7 +73,7 @@ export function TaskForm({ task, storyId, onSuccess }: TaskFormProps) {
                 assignedUserId: "",
             });
         }
-    }, [task?.id, form]);
+    }, [task, form]);
 
     function onSubmit(values: FormValues) {
         const { assignedUserId, ...otherValues } = values;
@@ -76,27 +84,39 @@ export function TaskForm({ task, storyId, onSuccess }: TaskFormProps) {
 
         if (task) {
             // For existing task, preserve existing dates and status if not changing assignment
-            const updatedTask: Task = {
-                ...task,
-                ...otherValues,
-                assignedUserId: assignedUserId || undefined,
-                status: assignedUserId && task.status === "todo" ? "doing" : task.status,
-                startDate: assignedUserId && task.status === "todo" ? startDate : task.startDate,
-            };
-            updateTask(updatedTask);
+            updateTaskMutation.mutate(
+                {
+                    id: task.id,
+                    title: values.name,
+                    ...otherValues,
+                    assignedUserId: assignedUserId || undefined,
+                    // Preserve existing status unless changing assignment
+                    status: task.assignedUserId !== assignedUserId ? status : task.status,
+                    startDate: !task.assignedUserId && assignedUserId ? startDate : task.startDate,
+                    storyId,
+                },
+                {
+                    onSuccess: () => {
+                        onSuccess?.();
+                    },
+                }
+            );
         } else {
-            // For new task
-            createTask({
-                ...otherValues,
-                storyId,
-                status,
-                assignedUserId: assignedUserId || undefined,
-                startDate,
-            });
-        }
-
-        if (onSuccess) {
-            onSuccess();
+            createTaskMutation.mutate(
+                {
+                    title: values.name,
+                    ...otherValues,
+                    assignedUserId: assignedUserId || undefined,
+                    status,
+                    startDate,
+                    storyId,
+                },
+                {
+                    onSuccess: () => {
+                        onSuccess?.();
+                    },
+                }
+            );
         }
     }
 

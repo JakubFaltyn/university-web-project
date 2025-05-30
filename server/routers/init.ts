@@ -136,7 +136,7 @@ export const initRouter = router({
             await Task.insertMany([
                 // Student Authentication System tasks
                 {
-                    name: "Design login UI components",
+                    title: "Design login UI components",
                     description: "Create reusable login form components with proper validation",
                     priority: "medium",
                     storyId: stories[0]._id,
@@ -148,7 +148,7 @@ export const initRouter = router({
                     assignedUserId: users[1]._id, // Developer
                 },
                 {
-                    name: "Implement JWT authentication",
+                    title: "Implement JWT authentication",
                     description: "Set up JWT token handling and session management",
                     priority: "high",
                     storyId: stories[0]._id,
@@ -159,7 +159,7 @@ export const initRouter = router({
                     assignedUserId: users[1]._id, // Developer
                 },
                 {
-                    name: "Setup OAuth integration",
+                    title: "Setup OAuth integration",
                     description: "Integrate with Google OAuth for external authentication",
                     priority: "medium",
                     storyId: stories[0]._id,
@@ -170,7 +170,7 @@ export const initRouter = router({
 
                 // Course Management Dashboard tasks
                 {
-                    name: "Design course creation form",
+                    title: "Design course creation form",
                     description: "Create intuitive form for course creation with validation",
                     priority: "high",
                     storyId: stories[1]._id,
@@ -179,7 +179,7 @@ export const initRouter = router({
                     createdAt: new Date().toISOString(),
                 },
                 {
-                    name: "Implement course listing",
+                    title: "Implement course listing",
                     description: "Display courses with search and filter functionality",
                     priority: "medium",
                     storyId: stories[1]._id,
@@ -190,7 +190,7 @@ export const initRouter = router({
 
                 // Mobile App Architecture tasks
                 {
-                    name: "Setup React Native project",
+                    title: "Setup React Native project",
                     description: "Initialize React Native project with proper structure",
                     priority: "high",
                     storyId: stories[3]._id,
@@ -202,7 +202,7 @@ export const initRouter = router({
                     assignedUserId: users[1]._id, // Developer
                 },
                 {
-                    name: "Implement navigation system",
+                    title: "Implement navigation system",
                     description: "Set up navigation between app screens",
                     priority: "medium",
                     storyId: stories[3]._id,
@@ -215,7 +215,7 @@ export const initRouter = router({
 
                 // CI/CD Pipeline tasks
                 {
-                    name: "Configure GitHub Actions",
+                    title: "Configure GitHub Actions",
                     description: "Set up automated testing and deployment workflows",
                     priority: "high",
                     storyId: stories[5]._id,
@@ -226,7 +226,7 @@ export const initRouter = router({
                     assignedUserId: users[2]._id, // DevOps
                 },
                 {
-                    name: "Setup Docker containers",
+                    title: "Setup Docker containers",
                     description: "Containerize applications for consistent deployment",
                     priority: "medium",
                     storyId: stories[5]._id,
@@ -237,7 +237,7 @@ export const initRouter = router({
 
                 // Monitoring tasks
                 {
-                    name: "Install Prometheus monitoring",
+                    title: "Install Prometheus monitoring",
                     description: "Set up Prometheus for metrics collection",
                     priority: "medium",
                     storyId: stories[6]._id,

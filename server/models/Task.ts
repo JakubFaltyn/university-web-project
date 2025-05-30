@@ -1,62 +1,61 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { Task as TaskType } from "../types";
+import { Task as TaskType } from "@lib/types";
 
-export interface ITask extends Omit<TaskType, "id">, Document {
-    _id: string;
+export interface ITask extends Document, Omit<TaskType, "id" | "storyId" | "assignedUserId"> {
+    _id: mongoose.Types.ObjectId;
+    storyId: mongoose.Types.ObjectId;
+    assignedUserId?: mongoose.Types.ObjectId;
 }
 
-const TaskSchema: Schema = new Schema(
-    {
-        name: {
-            type: String,
-            required: true,
-        },
-        description: {
-            type: String,
-            required: true,
-        },
-        priority: {
-            type: String,
-            enum: ["low", "medium", "high"],
-            required: true,
-        },
-        storyId: {
-            type: Schema.Types.ObjectId,
-            ref: "Story",
-            required: true,
-        },
-        estimatedTime: {
-            type: Number,
-            required: true,
-        },
-        status: {
-            type: String,
-            enum: ["todo", "doing", "done"],
-            required: true,
-        },
-        createdAt: {
-            type: String,
-            required: true,
-        },
-        startDate: {
-            type: String,
-            required: false,
-        },
-        endDate: {
-            type: String,
-            required: false,
-        },
-        assignedUserId: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            required: false,
-        },
+const TaskSchema = new Schema({
+    title: {
+        type: String,
+        required: true,
     },
-    {
-        timestamps: true,
-    }
-);
+    description: {
+        type: String,
+        required: false,
+    },
+    priority: {
+        type: String,
+        enum: ["low", "medium", "high"],
+        default: "medium",
+        required: true,
+    },
+    status: {
+        type: String,
+        enum: ["todo", "doing", "done"],
+        default: "todo",
+        required: true,
+    },
+    assignedUserId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: false,
+    },
+    storyId: {
+        type: Schema.Types.ObjectId,
+        ref: "Story",
+        required: true,
+    },
+    estimatedTime: {
+        type: Number,
+        required: true,
+        min: 0.5,
+    },
+    startDate: {
+        type: String,
+        required: false,
+    },
+    endDate: {
+        type: String,
+        required: false,
+    },
+    createdAt: {
+        type: String,
+        required: true,
+        default: () => new Date().toISOString(),
+    },
+});
 
-const Task = mongoose.models.Task || mongoose.model<ITask>("Task", TaskSchema);
-
-export default Task;
+export default mongoose.models.Task || mongoose.model<ITask>("Task", TaskSchema);

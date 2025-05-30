@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { Story as StoryType } from "../types";
+import { Story as StoryType } from "@lib/types";
 
 export interface IStory extends Omit<StoryType, "id">, Document {
     _id: string;

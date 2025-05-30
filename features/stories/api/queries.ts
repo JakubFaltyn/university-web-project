@@ -1,11 +1,11 @@
 /**
- * Story query options for consistent caching and behavior
+ * Story query options for React Query v5
  */
-export const storyQueries = {
+export const storyQueriesOptions = {
     /**
      * Options for fetching all stories
      */
-    all: {
+    getAll: {
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchOnWindowFocus: false,
         retry: 2,
@@ -14,7 +14,7 @@ export const storyQueries = {
     /**
      * Options for fetching a single story by ID
      */
-    byId: (id: string) => ({
+    getById: (id: string) => ({
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchOnWindowFocus: false,
         retry: 2,
@@ -22,9 +22,9 @@ export const storyQueries = {
     }),
 
     /**
-     * Options for fetching stories with specific filters
+     * Options for fetching stories with filters
      */
-    filtered: (enabled = true) => ({
+    getFiltered: (enabled = true) => ({
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchOnWindowFocus: false,
         retry: 2,

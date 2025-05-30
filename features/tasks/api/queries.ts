@@ -1,11 +1,11 @@
 /**
- * Task query options for consistent caching and behavior
+ * Task query options for React Query v5
  */
-export const taskQueries = {
+export const taskQueriesOptions = {
     /**
      * Options for fetching all tasks
      */
-    all: {
+    getAll: {
         staleTime: 1 * 60 * 1000, // 1 minute (tasks change frequently)
         refetchOnWindowFocus: false,
         retry: 2,
@@ -14,7 +14,7 @@ export const taskQueries = {
     /**
      * Options for fetching a single task by ID
      */
-    byId: (id: string) => ({
+    getById: (id: string) => ({
         staleTime: 1 * 60 * 1000, // 1 minute
         refetchOnWindowFocus: false,
         retry: 2,
@@ -22,9 +22,9 @@ export const taskQueries = {
     }),
 
     /**
-     * Options for fetching tasks with specific filters
+     * Options for fetching tasks with filters
      */
-    filtered: (enabled = true) => ({
+    getFiltered: (enabled = true) => ({
         staleTime: 1 * 60 * 1000, // 1 minute
         refetchOnWindowFocus: false,
         retry: 2,

@@ -27,7 +27,6 @@ const formatStory = (story: IStory) => ({
     createdAt: story.createdAt,
     status: story.status,
     ownerId: story.ownerId.toString(),
-    autoUpdateStatus: story.autoUpdateStatus,
 });
 
 export const storiesRouter = router({

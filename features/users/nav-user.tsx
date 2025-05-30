@@ -7,8 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAppStore } from "@lib/store";
 import { User } from "@lib/types";
-import { trpc } from "@/lib/trpc";
-
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
 export function NavUser({
     user,
 }: {
@@ -20,12 +20,13 @@ export function NavUser({
         id: string;
     };
 }) {
+    const trpc = useTRPC();
     const { isMobile } = useSidebar();
     const { setCurrentUser, setActiveProject } = useAppStore();
 
     // Fetch users and projects using tRPC
-    const { data: allUsers = [] } = trpc.users.getAll.useQuery();
-    const { data: allProjects = [] } = trpc.projects.getAll.useQuery();
+    const { data: allUsers = [] } = useQuery(trpc.users.getAll.queryOptions());
+    const { data: allProjects = [] } = useQuery(trpc.projects.getAll.queryOptions());
 
     // Filter out current user (only if we have a real user selected)
     const users = user.id ? allUsers.filter((u: User) => u.id !== user.id) : allUsers;

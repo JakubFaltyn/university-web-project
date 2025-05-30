@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAppStore } from "@lib/store";
 import { Story } from "@lib/types";
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
+import { useCreateStoryMutation, useUpdateStoryMutation } from "../api/mutations";
 
 const storySchema = z.object({
     name: z.string().min(1, "Story name is required"),
@@ -32,22 +34,14 @@ interface StoryFormProps {
 export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
     const { activeProject } = useAppStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const trpc = useTRPC();
 
     // Fetch users for owner selection
-    const { data: users = [] } = trpc.users.getAll.useQuery();
+    const { data: users = [] } = useQuery(trpc.users.getAll.queryOptions());
 
     // tRPC mutations
-    const createStoryMutation = trpc.stories.create.useMutation({
-        onSuccess: () => {
-            onSuccess?.();
-        },
-    });
-
-    const updateStoryMutation = trpc.stories.update.useMutation({
-        onSuccess: () => {
-            onSuccess?.();
-        },
-    });
+    const createStoryMutation = useCreateStoryMutation();
+    const updateStoryMutation = useUpdateStoryMutation();
 
     const {
         register,
@@ -82,6 +76,7 @@ export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
                 await createStoryMutation.mutateAsync(data);
             }
             reset();
+            onSuccess?.();
         } catch (error) {
             console.error("Error saving story:", error);
         } finally {
@@ -125,7 +120,7 @@ export function StoryForm({ story, onSuccess, onCancel }: StoryFormProps) {
                         <SelectValue placeholder="Select owner" />
                     </SelectTrigger>
                     <SelectContent>
-                        {users.map((user) => (
+                        {users.map((user: any) => (
                             <SelectItem key={user.id} value={user.id}>
                                 {user.firstName} {user.lastName} ({user.role})
                             </SelectItem>

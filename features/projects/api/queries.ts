@@ -1,11 +1,11 @@
 /**
- * Project query options for consistent caching and behavior
+ * Project query options for React Query v5
  */
-export const projectQueries = {
+export const projectQueriesOptions = {
     /**
      * Options for fetching all projects
      */
-    all: {
+    getAll: {
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchOnWindowFocus: false,
         retry: 2,
@@ -14,7 +14,7 @@ export const projectQueries = {
     /**
      * Options for fetching a single project by ID
      */
-    byId: (id: string) => ({
+    getById: (id: string) => ({
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchOnWindowFocus: false,
         retry: 2,
@@ -22,9 +22,9 @@ export const projectQueries = {
     }),
 
     /**
-     * Options for fetching projects with specific filters
+     * Options for fetching projects with filters
      */
-    filtered: (enabled = true) => ({
+    getFiltered: (enabled = true) => ({
         staleTime: 2 * 60 * 1000, // 2 minutes
         refetchOnWindowFocus: false,
         retry: 2,

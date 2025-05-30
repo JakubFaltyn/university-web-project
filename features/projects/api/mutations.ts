@@ -1,52 +1,55 @@
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
- * Project mutation options with automatic cache invalidation
+ * Project mutation hooks for React Query v5
  */
-export const projectMutations = {
-    /**
-     * Options for creating a new project
-     */
-    create: () => {
-        const utils = trpc.useUtils();
-        return {
+
+export const useCreateProjectMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.projects.create.mutationOptions({
             onSuccess: () => {
-                utils.projects.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.projects.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to create project:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for updating an existing project
-     */
-    update: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useUpdateProjectMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.projects.update.mutationOptions({
             onSuccess: (updatedProject: { id: string }) => {
-                utils.projects.getAll.invalidate();
-                utils.projects.getById.invalidate({ id: updatedProject.id });
+                queryClient.invalidateQueries({ queryKey: trpc.projects.getAll.queryKey() });
+                queryClient.invalidateQueries({ queryKey: trpc.projects.getById.queryKey({ id: updatedProject.id }) });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to update project:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for deleting a project
-     */
-    delete: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useDeleteProjectMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.projects.delete.mutationOptions({
             onSuccess: () => {
-                utils.projects.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.projects.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to delete project:", error);
             },
-        };
-    },
+        })
+    );
 };

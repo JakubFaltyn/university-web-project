@@ -5,7 +5,8 @@ import { useState } from "react";
 import { User, UserRole } from "@lib/types";
 import { Button } from "@/components/ui/button";
 import { isReadOnly } from "@lib/permissions";
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
 
 interface AuthUser {
     id: string;
@@ -22,8 +23,10 @@ export function UserInfo({ authUser }: UserInfoProps) {
     const { currentUser, setCurrentUser } = useAppStore();
     const [showUserSelector, setShowUserSelector] = useState(false);
 
+    const trpc = useTRPC();
+
     // Fetch users using tRPC
-    const { data: users = [] } = trpc.users.getAll.useQuery();
+    const { data: users = [] } = useQuery(trpc.users.getAll.queryOptions());
 
     const handleUserChange = (user: User) => {
         setCurrentUser(user);

@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { Project as ProjectType } from "../types";
+import { Project as ProjectType } from "@lib/types";
 
 export interface IProject extends Omit<ProjectType, "id">, Document {
     _id: string;

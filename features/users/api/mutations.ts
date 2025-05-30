@@ -1,52 +1,55 @@
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
- * User mutation options with automatic cache invalidation
+ * User mutation hooks for React Query v5
  */
-export const userMutations = {
-    /**
-     * Options for creating a new user
-     */
-    create: () => {
-        const utils = trpc.useUtils();
-        return {
+
+export const useCreateUserMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.users.create.mutationOptions({
             onSuccess: () => {
-                utils.users.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.users.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to create user:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for updating an existing user
-     */
-    update: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useUpdateUserMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.users.update.mutationOptions({
             onSuccess: (updatedUser: { id: string }) => {
-                utils.users.getAll.invalidate();
-                utils.users.getById.invalidate({ id: updatedUser.id });
+                queryClient.invalidateQueries({ queryKey: trpc.users.getAll.queryKey() });
+                queryClient.invalidateQueries({ queryKey: trpc.users.getById.queryKey({ id: updatedUser.id }) });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to update user:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for deleting a user
-     */
-    delete: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useDeleteUserMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.users.delete.mutationOptions({
             onSuccess: () => {
-                utils.users.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.users.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to delete user:", error);
             },
-        };
-    },
+        })
+    );
 };

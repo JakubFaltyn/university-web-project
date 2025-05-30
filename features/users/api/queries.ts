@@ -1,11 +1,11 @@
 /**
- * User query options for consistent caching and behavior
+ * User query options for React Query v5
  */
-export const userQueries = {
+export const userQueriesOptions = {
     /**
      * Options for fetching all users
      */
-    all: {
+    getAll: {
         staleTime: 5 * 60 * 1000, // 5 minutes
         refetchOnWindowFocus: false,
         retry: 2,
@@ -14,7 +14,7 @@ export const userQueries = {
     /**
      * Options for fetching a single user by ID
      */
-    byId: (id: string) => ({
+    getById: (id: string) => ({
         staleTime: 5 * 60 * 1000, // 5 minutes
         refetchOnWindowFocus: false,
         retry: 2,
@@ -22,9 +22,9 @@ export const userQueries = {
     }),
 
     /**
-     * Options for fetching users with specific filters
+     * Options for fetching users with filters
      */
-    filtered: (enabled = true) => ({
+    getFiltered: (enabled = true) => ({
         staleTime: 5 * 60 * 1000, // 5 minutes
         refetchOnWindowFocus: false,
         retry: 2,

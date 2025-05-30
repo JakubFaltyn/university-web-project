@@ -6,7 +6,8 @@ import { ChevronsUpDown, FolderOpen } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAppStore } from "@lib/store";
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
 
 export function ProjectSwitcher({
     defaultProjects,
@@ -18,11 +19,12 @@ export function ProjectSwitcher({
         id: string;
     }[];
 }) {
+    const trpc = useTRPC();
     const { isMobile } = useSidebar();
     const { activeProject, setActiveProject } = useAppStore();
 
     // Fetch projects using tRPC
-    const { data: projects = [], isLoading } = trpc.projects.getAll.useQuery();
+    const { data: projects = [], isLoading } = useQuery(trpc.projects.getAll.queryOptions());
 
     const handleSetActiveProject = (projectId: string) => {
         if (projectId) {

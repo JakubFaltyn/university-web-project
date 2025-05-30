@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,24 +10,37 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 import { StoryForm } from "./forms/story-form";
 import { useAppStore } from "@/lib/store";
 import { Story } from "@/lib/types";
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
+import { useDeleteStoryMutation } from "./api/mutations";
 
-export function StoryList() {
+interface StoryListProps {
+    projectId?: string;
+}
+
+export function StoryList({ projectId }: StoryListProps) {
     const { activeProject } = useAppStore();
     const [editingStory, setEditingStory] = useState<Story | undefined>(undefined);
     const [isCreating, setIsCreating] = useState(false);
+    const trpc = useTRPC();
+    const router = useRouter();
+    const params = useParams();
 
-    // Fetch stories using tRPC
-    const { data: stories = [] } = trpc.stories.getAll.useQuery(activeProject ? { projectId: activeProject.id } : undefined);
+    // Get the current project ID from URL params or props
+    const currentProjectId = projectId || (params?.id as string) || activeProject?.id;
 
-    // Mutations
-    const utils = trpc.useUtils();
-    const deleteStoryMutation = trpc.stories.delete.useMutation({
-        onSuccess: () => {
-            // Invalidate and refetch stories
-            utils.stories.getAll.invalidate();
-        },
-    });
+    // Task 3: Handle project switching - redirect to correct URL when activeProject changes
+    useEffect(() => {
+        if (activeProject && currentProjectId !== activeProject.id) {
+            router.push(`/projects/${activeProject.id}/stories`);
+        }
+    }, [activeProject, currentProjectId, router]);
+
+    // Task 2: Use the EXACT same query options as server prefetch for proper cache sharing
+    const { data: stories = [] } = useQuery(trpc.stories.getAll.queryOptions(currentProjectId ? { projectId: currentProjectId } : undefined));
+
+    // Delete mutation
+    const deleteStoryMutation = useDeleteStoryMutation();
 
     const handleDelete = async (storyId: string) => {
         if (confirm("Are you sure you want to delete this story?")) {
@@ -46,9 +60,6 @@ export function StoryList() {
         setIsCreating(false);
     };
 
-    // Use the active project ID or a default project ID
-    const projectId = activeProject?.id || "default-project-id";
-
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -64,7 +75,7 @@ export function StoryList() {
                         <DialogHeader>
                             <DialogTitle>Create New Story</DialogTitle>
                         </DialogHeader>
-                        <StoryForm projectId={projectId} onSuccess={handleCreateSuccess} />
+                        <StoryForm onSuccess={handleCreateSuccess} />
                     </DialogContent>
                 </Dialog>
             </div>
@@ -85,7 +96,7 @@ export function StoryList() {
                                         <DialogHeader>
                                             <DialogTitle>Edit Story</DialogTitle>
                                         </DialogHeader>
-                                        <StoryForm story={editingStory} projectId={projectId} onSuccess={handleEditSuccess} />
+                                        <StoryForm story={editingStory} onSuccess={handleEditSuccess} />
                                     </DialogContent>
                                 </Dialog>
                                 <Button variant="ghost" size="sm" onClick={() => handleDelete(story.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">

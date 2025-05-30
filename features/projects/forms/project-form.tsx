@@ -1,68 +1,73 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage, Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Project } from "@lib/types";
-import { useAppStore } from "@lib/store";
-import { useEffect } from "react";
+import { useCreateProjectMutation, useUpdateProjectMutation } from "../api/mutations";
 
-const formSchema = z.object({
-    name: z.string().min(3, {
-        message: "Project name must be at least 3 characters.",
-    }),
-    description: z.string().min(10, {
-        message: "Description must be at least 10 characters.",
-    }),
+const projectSchema = z.object({
+    name: z.string().min(1, "Project name is required"),
+    description: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type ProjectFormData = z.infer<typeof projectSchema>;
 
 interface ProjectFormProps {
     project?: Project;
     onSuccess?: () => void;
+    onCancel?: () => void;
 }
 
-export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
-    const { createProject, updateProject } = useAppStore();
+export function ProjectForm({ project, onSuccess, onCancel }: ProjectFormProps) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
+    // Use tRPC mutation hooks
+    const createProjectMutation = useCreateProjectMutation();
+    const updateProjectMutation = useUpdateProjectMutation();
+
+    const form = useForm<ProjectFormData>({
+        resolver: zodResolver(projectSchema),
         defaultValues: {
-            name: "",
-            description: "",
+            name: project?.name || "",
+            description: project?.description || "",
         },
     });
 
-    useEffect(() => {
-        if (project) {
-            form.reset({
-                name: project.name,
-                description: project.description,
-            });
-        } else {
-            form.reset({
-                name: "",
-                description: "",
-            });
-        }
-    }, [project?.id, form]);
+    function onSubmit(values: ProjectFormData) {
+        setIsSubmitting(true);
 
-    function onSubmit(values: FormValues) {
         if (project) {
-            updateProject({
-                ...project,
-                ...values,
-            });
+            updateProjectMutation.mutate(
+                {
+                    id: project.id,
+                    ...values,
+                },
+                {
+                    onSuccess: () => {
+                        setIsSubmitting(false);
+                        onSuccess?.();
+                    },
+                    onError: () => {
+                        setIsSubmitting(false);
+                    },
+                }
+            );
         } else {
-            createProject(values);
-        }
-
-        if (onSuccess) {
-            onSuccess();
+            createProjectMutation.mutate(values, {
+                onSuccess: () => {
+                    setIsSubmitting(false);
+                    onSuccess?.();
+                },
+                onError: () => {
+                    setIsSubmitting(false);
+                },
+            });
         }
     }
 
@@ -90,7 +95,7 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
                         <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>
-                                <textarea
+                                <Textarea
                                     className="flex min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     placeholder="Describe your project"
                                     {...field}
@@ -101,7 +106,9 @@ export function ProjectForm({ project, onSuccess }: ProjectFormProps) {
                         </FormItem>
                     )}
                 />
-                <Button type="submit">{project ? "Update Project" : "Create Project"}</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : project ? "Update Project" : "Create Project"}
+                </Button>
             </form>
         </Form>
     );

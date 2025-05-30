@@ -7,25 +7,29 @@ import { NavMain } from "./nav-main";
 import { NavSecondary } from "./nav-secondary";
 import { ProjectSwitcher } from "./project-switcher";
 import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail, useSidebar } from "@/components/ui/sidebar";
 import { NavUser } from "@features/users/nav-user";
 import { NewProjectModal } from "@features/projects/new-project-modal";
 import { useAppStore } from "@lib/store";
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useQuery } from "@tanstack/react-query";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { currentUser, activeProject, isInitialized, initializeApp } = useAppStore();
     const [showNewProjectModal, setShowNewProjectModal] = React.useState(false);
+    const trpc = useTRPC();
+    const hasInitialized = React.useRef(false);
+    const { state } = useSidebar();
 
     // Fetch data for initialization
-    const { data: users = [], isLoading: usersLoading, error: usersError } = trpc.users.getAll.useQuery();
-    const { data: projects = [], isLoading: projectsLoading, error: projectsError } = trpc.projects.getAll.useQuery();
+    const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery(trpc.users.getAll.queryOptions());
+    const { data: projects = [], isLoading: projectsLoading, error: projectsError } = useQuery(trpc.projects.getAll.queryOptions());
 
-    // Initialize app when data is available
+    // Initialize app when data is available (only once)
     React.useEffect(() => {
         // Only initialize if we have valid data and haven't initialized yet
         if (
-            !isInitialized &&
+            !hasInitialized.current &&
             !usersLoading &&
             !projectsLoading &&
             !usersError &&
@@ -39,8 +43,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ) {
             console.log("Initializing app with:", { usersCount: users.length, projectsCount: projects.length });
             initializeApp(users, projects);
+            hasInitialized.current = true;
         }
-    }, [users, projects, isInitialized, initializeApp, usersLoading, projectsLoading, usersError, projectsError]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [users, projects, usersLoading, projectsLoading, usersError, projectsError]);
 
     const isLoading = usersLoading || projectsLoading || !isInitialized;
 
@@ -54,12 +60,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         },
         {
             title: "Stories",
-            url: "/stories",
+            url: activeProject ? `/projects/${activeProject.id}/stories` : "/stories",
             icon: FileText,
         },
         {
             title: "Tasks",
-            url: "/tasks",
+            url: activeProject ? `/projects/${activeProject.id}/tasks` : "/tasks",
             icon: CheckSquare,
         },
     ];
@@ -119,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <div className="px-2 py-2">
                         <Button variant="outline" size="sm" className="w-full justify-start gap-2" onClick={() => setShowNewProjectModal(true)} disabled={isLoading}>
                             <Plus className="h-4 w-4" />
-                            Add New Project
+                            <span className={state === "collapsed" ? "sr-only" : ""}>Add New Project</span>
                         </Button>
                     </div>
                 </SidebarHeader>

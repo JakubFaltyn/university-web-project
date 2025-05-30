@@ -1,52 +1,55 @@
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
- * Story mutation options with automatic cache invalidation
+ * Story mutation hooks for React Query v5
  */
-export const storyMutations = {
-    /**
-     * Options for creating a new story
-     */
-    create: () => {
-        const utils = trpc.useUtils();
-        return {
+
+export const useCreateStoryMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.stories.create.mutationOptions({
             onSuccess: () => {
-                utils.stories.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.stories.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to create story:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for updating an existing story
-     */
-    update: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useUpdateStoryMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.stories.update.mutationOptions({
             onSuccess: (updatedStory: { id: string }) => {
-                utils.stories.getAll.invalidate();
-                utils.stories.getById.invalidate({ id: updatedStory.id });
+                queryClient.invalidateQueries({ queryKey: trpc.stories.getAll.queryKey() });
+                queryClient.invalidateQueries({ queryKey: trpc.stories.getById.queryKey({ id: updatedStory.id }) });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to update story:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for deleting a story
-     */
-    delete: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useDeleteStoryMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.stories.delete.mutationOptions({
             onSuccess: () => {
-                utils.stories.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.stories.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to delete story:", error);
             },
-        };
-    },
+        })
+    );
 };

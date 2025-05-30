@@ -1,52 +1,55 @@
-import { trpc } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc/context-provider";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
- * Task mutation options with automatic cache invalidation
+ * Task mutation hooks for React Query v5
  */
-export const taskMutations = {
-    /**
-     * Options for creating a new task
-     */
-    create: () => {
-        const utils = trpc.useUtils();
-        return {
+
+export const useCreateTaskMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.tasks.create.mutationOptions({
             onSuccess: () => {
-                utils.tasks.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.tasks.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to create task:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for updating an existing task
-     */
-    update: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useUpdateTaskMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.tasks.update.mutationOptions({
             onSuccess: (updatedTask: { id: string }) => {
-                utils.tasks.getAll.invalidate();
-                utils.tasks.getById.invalidate({ id: updatedTask.id });
+                queryClient.invalidateQueries({ queryKey: trpc.tasks.getAll.queryKey() });
+                queryClient.invalidateQueries({ queryKey: trpc.tasks.getById.queryKey({ id: updatedTask.id }) });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to update task:", error);
             },
-        };
-    },
+        })
+    );
+};
 
-    /**
-     * Options for deleting a task
-     */
-    delete: () => {
-        const utils = trpc.useUtils();
-        return {
+export const useDeleteTaskMutation = () => {
+    const trpc = useTRPC();
+    const queryClient = useQueryClient();
+
+    return useMutation(
+        trpc.tasks.delete.mutationOptions({
             onSuccess: () => {
-                utils.tasks.getAll.invalidate();
+                queryClient.invalidateQueries({ queryKey: trpc.tasks.getAll.queryKey() });
             },
-            onError: (error: Error) => {
+            onError: (error) => {
                 console.error("Failed to delete task:", error);
             },
-        };
-    },
+        })
+    );
 };

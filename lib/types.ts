@@ -28,16 +28,15 @@ export interface Story {
     createdAt: string;
     status: StoryStatus;
     ownerId: string;
-    autoUpdateStatus?: boolean; // Whether status should be automatically calculated from tasks
 }
 
 export interface Task {
     id: string;
-    name: string;
+    title: string;
     description: string;
     priority: Priority;
     storyId: string;
-    estimatedTime: number; // in hours
+    estimatedTime: number;
     status: TaskStatus;
     createdAt: string;
     startDate?: string;

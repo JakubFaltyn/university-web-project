@@ -7,33 +7,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { trpc } from "@/lib/trpc";
-
+import { projectQueriesOptions } from "@/features/projects/api/queries";
+import { useUpdateProjectMutation } from "@/features/projects/api/mutations";
+import { useTRPC } from "@/lib/trpc/context-provider";
 import { Trash2, Save } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Project } from "@lib/types";
 import { DeleteProjectModal } from "./delete-project-modal";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ProjectSettingsPage() {
     const params = useParams();
     const router = useRouter();
+    const trpc = useTRPC();
     const { setActiveProject } = useAppStore();
 
     // Fetch project data using tRPC
     const projectId = params.id as string;
-    const { data: project, isLoading, error, refetch } = trpc.projects.getById.useQuery({ id: projectId }, { enabled: !!projectId });
+    const {
+        data: project,
+        isLoading,
+        error,
+    } = useQuery({
+        ...trpc.projects.getById.queryOptions({ id: projectId }),
+        ...projectQueriesOptions.getById(projectId),
+    });
 
     // Update project mutation
-    const updateProjectMutation = trpc.projects.update.useMutation({
-        onSuccess: () => {
-            console.log("Project updated successfully");
-            refetch(); // Refresh the project data
-        },
-        onError: (error) => {
-            console.error("Error updating project:", error);
-        },
-    });
+    const updateProjectMutation = useUpdateProjectMutation();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -70,6 +71,7 @@ export default function ProjectSettingsPage() {
                 name: formData.name,
                 description: formData.description,
             });
+            console.log("Project updated successfully");
         } catch (error) {
             console.error("Error updating project:", error);
         }

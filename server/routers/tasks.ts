@@ -7,10 +7,12 @@ const createTaskSchema = z.object({
     title: z.string().min(1),
     description: z.string().optional(),
     priority: z.enum(["low", "medium", "high"]).default("medium"),
-    status: z.enum(["todo", "in-progress", "done"]).default("todo"),
-    assigneeId: z.string().optional(),
-    projectId: z.string(),
-    dueDate: z.string().optional(),
+    status: z.enum(["todo", "doing", "done"]).default("todo"),
+    assignedUserId: z.string().optional(),
+    storyId: z.string(),
+    estimatedTime: z.number().min(0.5),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
 });
 
 const updateTaskSchema = createTaskSchema.partial().extend({
@@ -24,9 +26,11 @@ const formatTask = (task: ITask) => ({
     description: task.description,
     priority: task.priority,
     status: task.status,
-    assigneeId: task.assigneeId?.toString(),
-    projectId: task.projectId.toString(),
-    dueDate: task.dueDate,
+    assignedUserId: task.assignedUserId?.toString(),
+    storyId: task.storyId.toString(),
+    estimatedTime: task.estimatedTime,
+    startDate: task.startDate,
+    endDate: task.endDate,
     createdAt: task.createdAt,
 });
 
@@ -42,19 +46,19 @@ export const tasksRouter = router({
         }
     }),
 
-    // Get tasks by project ID
-    getByProjectId: publicProcedure
+    // Get tasks by story ID
+    getByStoryId: publicProcedure
         .input(
             z.object({
-                projectId: z.string(),
+                storyId: z.string(),
             })
         )
         .query(async ({ input }) => {
             try {
-                const tasks = await Task.find({ projectId: input.projectId });
+                const tasks = await Task.find({ storyId: input.storyId });
                 return tasks.map(formatTask);
             } catch (error) {
-                console.error("Error fetching tasks by project ID:", error);
+                console.error("Error fetching tasks by story ID:", error);
                 throw new Error("Failed to fetch tasks");
             }
         }),
@@ -100,6 +104,15 @@ export const tasksRouter = router({
     update: publicProcedure.input(updateTaskSchema).mutation(async ({ input }) => {
         try {
             const { id, ...updateData } = input;
+
+            // Handle status changes with automatic date updates
+            if (updateData.status === "doing" && !updateData.startDate) {
+                updateData.startDate = new Date().toISOString();
+            }
+            if (updateData.status === "done" && !updateData.endDate) {
+                updateData.endDate = new Date().toISOString();
+            }
+
             const task = await Task.findByIdAndUpdate(id, updateData, { new: true });
 
             if (!task) {

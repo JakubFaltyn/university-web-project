@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAppStore } from "@lib/store";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Project } from "@lib/types";
-import { trpc } from "@/lib/trpc";
+import { useDeleteProjectMutation } from "@/features/projects/api/mutations";
 
 interface DeleteProjectModalProps {
     project: Project;
@@ -19,23 +17,9 @@ interface DeleteProjectModalProps {
 
 export function DeleteProjectModal({ project, open, onOpenChange }: DeleteProjectModalProps) {
     const [confirmText, setConfirmText] = useState("");
-    const { setActiveProject } = useAppStore();
-    const router = useRouter();
 
     // Delete project mutation
-    const deleteProjectMutation = trpc.projects.delete.useMutation({
-        onSuccess: () => {
-            console.log("Project deleted successfully");
-            // Clear active project if it was the deleted one
-            setActiveProject(null);
-            // Close modal and redirect to dashboard
-            onOpenChange(false);
-            router.push("/");
-        },
-        onError: (error) => {
-            console.error("Error deleting project:", error);
-        },
-    });
+    const deleteProjectMutation = useDeleteProjectMutation();
 
     const isConfirmValid = confirmText === project.name;
 
